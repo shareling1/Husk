@@ -174,11 +174,11 @@ final class WebAppRuntime: NSObject {
     }
 
     private static let capacitorPlugins: [String: [String]] = [
-        "应用": ["getInfo", "getState", "getLaunchUrl", "exitApp", "minimizeApp", "toggleBackButtonHandler", "removeListener", "removeAllListeners"],
+        "App": ["getInfo", "getState", "getLaunchUrl", "exitApp", "minimizeApp", "toggleBackButtonHandler", "removeListener", "removeAllListeners"],
         "Device": ["getId", "getInfo", "getBatteryInfo", "getLanguageCode", "getLanguageTag"],
         "StatusBar": ["setStyle", "setBackgroundColor", "show", "hide", "getInfo", "setOverlaysWebView"],
         "SplashScreen": ["show", "hide"],
-        "键盘": ["show", "hide", "setAccessoryBarVisible", "setScroll", "setStyle", "setResizeMode", "getResizeMode", "removeAllListeners"],
+        "Keyboard": ["show", "hide", "setAccessoryBarVisible", "setScroll", "setStyle", "setResizeMode", "getResizeMode", "removeAllListeners"],
         "Haptics": ["impact", "notification", "vibrate", "selectionStart", "selectionChanged", "selectionEnd"],
     ]
 
@@ -361,7 +361,7 @@ final class WebAppRuntime: NSObject {
     func back() {
         switch kind {
         case .capacitor:
-            if capacitorEvent("应用", "backButton", ["canGoBack": webView.canGoBack]) { return }
+            if capacitorEvent("App", "backButton", ["canGoBack": webView.canGoBack]) { return }
         case .cordova:
             if cordovaOverridesBack, cordovaEvent("backbutton") { return }
         }
@@ -372,8 +372,8 @@ final class WebAppRuntime: NSObject {
     func setActive(_ active: Bool) {
         switch kind {
         case .capacitor:
-            capacitorEvent("应用", "appStateChange", ["isActive": active])
-            capacitorEvent("应用", active ? "resume" : "pause", [:])
+            capacitorEvent("App", "appStateChange", ["isActive": active])
+            capacitorEvent("App", active ? "resume" : "pause", [:])
         case .cordova:
             _ = cordovaEvent(active ? "resume" : "pause")
         }

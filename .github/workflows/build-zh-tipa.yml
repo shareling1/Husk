@@ -32,6 +32,8 @@ jobs:
             ~/.cargo/git
             src/rppairing-ios/target
           key: rppairing-ios-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('src/rppairing-ios/Cargo.lock') }}
+      - name: Check source safety
+        run: python3 tests/zh/test_source_safety.py
       - name: Stage verified release runtime and CJK font
         run: python3 scripts/prepare_zh_build.py
       - name: Build pairing library from source

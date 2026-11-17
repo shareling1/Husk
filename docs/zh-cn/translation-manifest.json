@@ -9055,18 +9055,6 @@
   },
   {
     "file": "src/app/Husk/WebApp.swift",
-    "line": 177,
-    "en": "App",
-    "zh": "应用"
-  },
-  {
-    "file": "src/app/Husk/WebApp.swift",
-    "line": 181,
-    "en": "Keyboard",
-    "zh": "键盘"
-  },
-  {
-    "file": "src/app/Husk/WebApp.swift",
     "line": 321,
     "en": "OK",
     "zh": "好"
@@ -9094,24 +9082,6 @@
     "line": 328,
     "en": "Cancel",
     "zh": "取消"
-  },
-  {
-    "file": "src/app/Husk/WebApp.swift",
-    "line": 364,
-    "en": "App",
-    "zh": "应用"
-  },
-  {
-    "file": "src/app/Husk/WebApp.swift",
-    "line": 375,
-    "en": "App",
-    "zh": "应用"
-  },
-  {
-    "file": "src/app/Husk/WebApp.swift",
-    "line": 376,
-    "en": "App",
-    "zh": "应用"
   },
   {
     "file": "src/app/Husk/WebApp.swift",
