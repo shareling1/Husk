@@ -21,6 +21,7 @@ jobs:
         run: |
           xcodebuild -version
           xcrun --sdk iphoneos --show-sdk-version
+          xcodebuild -downloadComponent MetalToolchain
           brew install xcodegen qemu
           rustup target add aarch64-apple-ios
           python3 -m venv build-tools
