@@ -13,8 +13,8 @@ jobs:
     runs-on: macos-26
     timeout-minutes: 90
     env:
-      HOMEBREW_NO_AUTO_UPDATE: 1
-      DD: ${{ runner.temp }}/husk-zh-build
+      HOMEBREW_NO_AUTO_UPDATE: "1"
+      DD: ${{ github.workspace }}/build/derived-data
     steps:
       - uses: actions/checkout@v4
       - name: Check toolchain
