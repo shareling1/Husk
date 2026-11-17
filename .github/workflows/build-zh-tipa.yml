@@ -65,10 +65,18 @@ jobs:
           unzip -q outputs/*.tipa -d "$RUNNER_TEMP/verify"
           APP="$RUNNER_TEMP/verify/Payload/Husk.app"
           codesign --verify --deep --strict "$APP"
-          codesign -d --entitlements - "$APP" > outputs/entitlements.plist
+          codesign -d --entitlements :- "$APP" > outputs/entitlements.plist
           python3 - <<'PY'
           import plistlib
-          e=plistlib.load(open('outputs/entitlements.plist','rb'))
+          from pathlib import Path
+          p=Path('outputs/entitlements.plist')
+          raw=p.read_bytes()
+          # codesign versions can prefix XML with the embedded entitlement blob header.
+          start=raw.find(b'<?xml')
+          assert start >= 0, repr(raw[:160])
+          end=raw.index(b'</plist>', start)+len(b'</plist>')
+          e=plistlib.loads(raw[start:end])
+          p.write_bytes(plistlib.dumps(e))
           for k in ['com.apple.private.cs.debugger','dynamic-codesigning','com.apple.private.skip-library-validation']:
               assert k not in e, k
           for k in ['get-task-allow','com.apple.developer.kernel.increased-memory-limit','com.apple.developer.kernel.extended-virtual-addressing']:
