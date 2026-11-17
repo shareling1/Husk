@@ -19,3 +19,5 @@ UIAppFonts 注册字体；CJKFonts 指向包内字体目录，供安卓转译层
 自动检查：本地化语法、协议字段与字体路径配置检查、Xcode 编译、Mach-O/资源完整性、字体哈希与中日韩字形样本、签名与 TrollStore 禁用权限。
 原版字体路径 C 单元测试仅在 ARM 主机执行；Intel runner 因 ARM 寄存器依赖跳过此项，未修改生产运行时以迁就主机测试。
 未连接 iPhone 进行安装、布局或游戏运行测试；外部网页、游戏自身界面和底层诊断可能仍为原语言。
+
+构建兼容修复：将个人资料工具栏的可选项条件移至 ToolbarItem 内部，避免 iOS 15.5 目标调用仅 iOS 16 可用的 ToolbarContentBuilder.buildIf；未提高最低系统版本。

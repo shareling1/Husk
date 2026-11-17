@@ -19,8 +19,9 @@ struct ProfileView: View {
             .background(Console.page.ignoresSafeArea())
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("完成") { dismiss() } }
-                if account.signedIn {
-                    ToolbarItem(placement: .primaryAction) {
+                // Keep the conditional inside the view builder: ToolbarContentBuilder.buildIf requires iOS 16.
+                ToolbarItem(placement: .primaryAction) {
+                    if account.signedIn {
                         Menu {
                             Button { editing = true } label: { Label("编辑资料", systemImage: "pencil") }
                             if let u = account.user {
