@@ -1,0 +1,79 @@
+name: Build Chinese TIPA
+on:
+  workflow_dispatch:
+  push:
+    branches: [zh-cn-bundled-fonts]
+permissions:
+  contents: read
+concurrency:
+  group: chinese-tipa-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  build:
+    runs-on: macos-26
+    timeout-minutes: 90
+    env:
+      HOMEBREW_NO_AUTO_UPDATE: 1
+      DD: ${{ runner.temp }}/husk-zh-build
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check toolchain
+        run: |
+          xcodebuild -version
+          xcrun --sdk iphoneos --show-sdk-version
+          brew install xcodegen qemu
+          rustup target add aarch64-apple-ios
+          python3 -m venv build-tools
+          build-tools/bin/pip install fonttools==4.68.0
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            src/rppairing-ios/target
+          key: rppairing-ios-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('src/rppairing-ios/Cargo.lock') }}
+      - name: Stage verified release runtime and CJK font
+        run: python3 scripts/prepare_zh_build.py
+      - name: Build pairing library from source
+        run: bash scripts/build_rppairing_ios.sh
+      - name: Test font path resolver
+        run: bash tests/translation-layer/run_font_paths.sh
+      - name: Validate localization files
+        run: find src/app -name '*.strings' -print0 | xargs -0 plutil -lint
+      - name: Compile and package TrollStore build
+        run: |
+          mkdir -p outputs
+          bash scripts/package_ipa.sh --trollstore "$GITHUB_WORKSPACE/outputs/Husk-3.4-zh-Hans-bundled-font.tipa"
+      - name: Verify package, font and entitlements
+        run: |
+          build-tools/bin/python scripts/verify_zh_package.py outputs/Husk-3.4-zh-Hans-bundled-font.tipa
+          mkdir -p "$RUNNER_TEMP/verify"
+          unzip -q outputs/*.tipa -d "$RUNNER_TEMP/verify"
+          APP="$RUNNER_TEMP/verify/Payload/Husk.app"
+          codesign --verify --deep --strict "$APP"
+          codesign -d --entitlements - "$APP" > outputs/entitlements.plist
+          python3 - <<'PY'
+          import plistlib
+          e=plistlib.load(open('outputs/entitlements.plist','rb'))
+          for k in ['com.apple.private.cs.debugger','dynamic-codesigning','com.apple.private.skip-library-validation']:
+              assert k not in e, k
+          for k in ['get-task-allow','com.apple.developer.kernel.increased-memory-limit','com.apple.developer.kernel.extended-virtual-addressing']:
+              assert e.get(k), k
+          PY
+          cp build/zh-provenance.json outputs/
+          shasum -a 256 outputs/*.tipa > outputs/SHA256SUMS.txt
+      - name: Upload TIPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: Husk-zh-Hans-tipa
+          path: outputs/
+          if-no-files-found: error
+          retention-days: 30
+      - name: Upload build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: xcode-build-log
+          path: ${{ env.DD }}/build.log
+          if-no-files-found: ignore
+          retention-days: 7

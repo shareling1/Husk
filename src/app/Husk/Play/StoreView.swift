@@ -20,21 +20,21 @@ struct StoreView: View {
                 if !manager.isSignedIn {
                     signedOutState
                 } else if manager.isLoading && manager.featuredApps.isEmpty && !manager.isSearching {
-                    ProgressView("Connecting to Google Play…")
+                    ProgressView("正在连接 Google Play…")
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
                     storeContent
                 }
             }
             .background(Console.page.ignoresSafeArea())
-            .navigationTitle("Store")
+            .navigationTitle("商店")
             .navigationBarTitleDisplayMode(.large)
-            .searchable(text: $searchText, prompt: "Search Google Play")
+            .searchable(text: $searchText, prompt: "搜索 Google Play")
             .toolbar {
                 ToolbarItemGroup(placement: .topBarTrailing) {
                     if !manager.downloadProgress.isEmpty {
                         Button { Router.shared.showDownloads = true } label: {
-                            Label("\(manager.downloadProgress.count) Downloading", systemImage: "arrow.down.circle")
+                            Label("\(manager.downloadProgress.count) 个正在下载", systemImage: "arrow.down.circle")
                                 .labelStyle(.titleAndIcon)
                                 .font(.subheadline.weight(.semibold))
                         }
@@ -42,7 +42,7 @@ struct StoreView: View {
                     if manager.isSignedIn {
                         Menu {
                             if let s = manager.session {
-                                Text(s.isAnonymous ? "Guest Account (Aurora)" : s.email)
+                                Text(s.isAnonymous ? "访客账号（Aurora）" : s.email)
                                     .font(.caption)
                                 if s.isAnonymous {
                                     Text(s.email).font(.caption2).foregroundStyle(.secondary)
@@ -52,7 +52,7 @@ struct StoreView: View {
                             Button(role: .destructive) {
                                 manager.signOut()
                             } label: {
-                                Label("Sign Out", systemImage: "rectangle.portrait.and.arrow.right")
+                                Label("退出登录", systemImage: "rectangle.portrait.and.arrow.right")
                             }
                         } label: {
                             Image(systemName: manager.session?.isAnonymous == true ? "person.badge.shield.checkmark" : "person.crop.circle")
@@ -63,15 +63,15 @@ struct StoreView: View {
                             Button {
                                 Task { await manager.signInAsGuest() }
                             } label: {
-                                Label("Use Guest Account (Aurora)", systemImage: "person.crop.circle.badge.checkmark")
+                                Label("使用访客账户（Aurora）", systemImage: "person.crop.circle.badge.checkmark")
                             }
                             Button {
                                 showSignIn = true
                             } label: {
-                                Label("Sign In with Google", systemImage: "person.badge.key")
+                                Label("用 Google 登录", systemImage: "person.badge.key")
                             }
                         } label: {
-                            Text("Sign In")
+                            Text("登录")
                                 .font(.subheadline.weight(.semibold))
                         }
                     }
@@ -97,11 +97,11 @@ struct StoreView: View {
                     }
                 } catch {}
             }
-            .alert("Error", isPresented: Binding(
+            .alert("错误", isPresented: Binding(
                 get: { manager.errorMessage != nil },
                 set: { if !$0 { manager.errorMessage = nil } }
             )) {
-                Button("OK", role: .cancel) { manager.errorMessage = nil }
+                Button("好", role: .cancel) { manager.errorMessage = nil }
             } message: {
                 Text(manager.errorMessage ?? "")
             }
@@ -119,11 +119,11 @@ struct StoreView: View {
                 .foregroundStyle(Color.accentColor)
 
             VStack(spacing: 8) {
-                Text("Google Play Store")
+                Text("Google Play 商店")
                     .font(.title2.weight(.bold))
                     .foregroundStyle(Theme.text)
 
-                Text("Browse and download apps using an anonymous Aurora guest account, or sign in with your Google account.")
+                Text("使用匿名 Aurora 访客账户浏览和下载应用，或用你的 Google 账户登录。")
                     .font(.subheadline)
                     .foregroundStyle(Theme.textDim)
                     .multilineTextAlignment(.center)
@@ -133,7 +133,7 @@ struct StoreView: View {
             if manager.isLoading {
                 VStack(spacing: 12) {
                     ProgressView()
-                    Text(manager.statusMessage ?? "Signing in…")
+                    Text(manager.statusMessage ?? "正在登录…")
                         .font(.footnote)
                         .foregroundStyle(Theme.textDim)
                 }
@@ -148,7 +148,7 @@ struct StoreView: View {
                     } label: {
                         HStack(spacing: 8) {
                             Image(systemName: "person.crop.circle.badge.checkmark")
-                            Text("Use Guest Account")
+                            Text("使用访客账户")
                         }
                         .font(.headline)
                         .frame(maxWidth: 240)
@@ -163,7 +163,7 @@ struct StoreView: View {
                     } label: {
                         HStack(spacing: 8) {
                             Image(systemName: "person.badge.key")
-                            Text("Sign In with Google")
+                            Text("用 Google 登录")
                         }
                         .font(.subheadline.weight(.medium))
                         .frame(maxWidth: 240)
@@ -212,12 +212,12 @@ struct StoreView: View {
                 let list = shelf == .apps ? apps : shelf == .games ? games : manager.featuredApps
                 if let lead = list.first { banner(lead) }
                 if shelf != .apps, !games.isEmpty {
-                    row(shelf == .games ? "Games" : "Popular Games", games.dropFirst(shelf == .featured ? 1 : 1).map { $0 })
+                    row(shelf == .games ? "游戏" : "热门游戏", games.dropFirst(shelf == .featured ? 1 : 1).map { $0 })
                 }
-                if shelf != .games, !apps.isEmpty { row("Apps", shelf == .apps ? Array(apps.dropFirst()) : apps) }
+                if shelf != .games, !apps.isEmpty { row("应用", shelf == .apps ? Array(apps.dropFirst()) : apps) }
                 if shelf != .apps, !trending.isEmpty {
                     VStack(alignment: .leading, spacing: 12) {
-                        Text("Trending Now").font(.system(size: 20, weight: .bold)).foregroundStyle(Console.text)
+                        Text("热门趋势").font(.system(size: 20, weight: .bold)).foregroundStyle(Console.text)
                         ScrollView(.horizontal, showsIndicators: false) {
                             HStack(alignment: .top, spacing: 14) {
                                 ForEach(trending, id: \.package) { e in
@@ -232,7 +232,7 @@ struct StoreView: View {
                     }
                 }
                 if manager.featuredApps.isEmpty {
-                    Text("No featured apps right now. Search Google Play above.")
+                    Text("暂无精选应用。请在上方搜索 Google Play。")
                         .font(.subheadline).foregroundStyle(Console.textDim)
                 }
             }
@@ -253,10 +253,10 @@ struct StoreView: View {
                 }
                 LinearGradient(colors: [.black.opacity(0.75), .clear], startPoint: .leading, endPoint: .trailing)
                 VStack(alignment: .leading, spacing: 6) {
-                    Text(shelf == .apps ? "Apps for\nevery day." : "Discover\nnew worlds.")
+                    Text(shelf == .apps ? "适合每天\n使用的应用。" : "发现\n新世界。")
                         .font(.system(size: 28, weight: .bold)).foregroundStyle(.white)
                         .multilineTextAlignment(.leading)
-                    Text("\(app.title) and more, running on your iPhone with Husk.")
+                    Text("\(app.title) 等更多应用，用 Husk 在你的 iPhone 上运行。")
                         .font(.system(size: 13)).foregroundStyle(.white.opacity(0.85))
                         .lineLimit(2).multilineTextAlignment(.leading)
                 }
@@ -298,7 +298,7 @@ struct StoreView: View {
             Text(title).font(.system(size: 13, weight: .semibold)).foregroundStyle(Console.text).lineLimit(1)
             HStack(spacing: 4) {
                 Circle().fill(status?.color ?? Console.textDim).frame(width: 6, height: 6)
-                Text("Android").font(.system(size: 11)).foregroundStyle(Console.textDim)
+                Text("安卓").font(.system(size: 11)).foregroundStyle(Console.textDim)
             }
         }
         .frame(width: 104, alignment: .leading)
@@ -311,7 +311,7 @@ struct StoreView: View {
         Task {
             let app = try? await PlayAPI.details(packageName: package, session: s)
             opening = nil
-            if let app { selectedApp = app } else { manager.errorMessage = "Google Play has no page for \(package) here." }
+            if let app { selectedApp = app } else { manager.errorMessage = "Google Play 在此地区没有 \(package) 的页面。" }
         }
     }
 
@@ -324,12 +324,12 @@ struct StoreView: View {
                     if manager.isSearching {
                         HStack {
                             Spacer()
-                            ProgressView("Searching…")
+                            ProgressView("正在搜索…")
                             Spacer()
                         }
                         .padding(.vertical, 12)
                     } else if manager.searchResults.isEmpty {
-                        Text("No apps found for \"\(debouncedSearchText)\".")
+                        Text("没有找到“\(debouncedSearchText)”相关的应用。")
                             .font(.subheadline)
                             .foregroundStyle(Theme.textDim)
                             .padding(.vertical, 8)
@@ -339,7 +339,7 @@ struct StoreView: View {
                         }
                     }
                 } header: {
-                    Text("Search Results")
+                    Text("搜索结果")
                 }
             } else {
                 if !manager.featuredApps.isEmpty {
@@ -348,11 +348,11 @@ struct StoreView: View {
                             appRow(app)
                         }
                     } header: {
-                        Text("Featured Apps")
+                        Text("精选应用")
                     }
                 } else {
                     Section {
-                        Text("No featured apps available. Try searching above.")
+                        Text("暂无精选应用。请尝试在上方搜索。")
                             .font(.subheadline)
                             .foregroundStyle(Theme.textDim)
                     }
@@ -453,7 +453,7 @@ struct StoreView: View {
                     .frame(width: 32, height: 32)
                 }
                 .buttonStyle(.borderless)
-                .accessibilityLabel("Stop Download")
+                .accessibilityLabel("停止下载")
             } else {
                 Button {
                     manager.downloadAndInstall(app: app)
@@ -476,9 +476,9 @@ enum StoreShelf: String, CaseIterable, Identifiable {
     var id: String { rawValue }
     var title: String {
         switch self {
-        case .featured: return "Featured"
-        case .games: return "Games"
-        case .apps: return "Apps"
+        case .featured: return "精选"
+        case .games: return "游戏"
+        case .apps: return "应用"
         }
     }
 }

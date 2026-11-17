@@ -59,6 +59,9 @@ struct HuskApp: App {
     @UIApplicationDelegateAdaptor(HuskAppDelegate.self) private var appDelegate
 
     init() {
+        // This build is the dedicated Simplified Chinese edition, including system-owned dialogs.
+        UserDefaults.standard.set(["zh-Hans"], forKey: "AppleLanguages")
+        UserDefaults.standard.register(defaults: [Onboarding.languageKey: "zh-Hans"])
         // Order matters. HuskLog redirects stderr, so anything that logs before
         // this point is lost -- and the JIT path is exactly what we cannot afford
         // to lose the first line of.

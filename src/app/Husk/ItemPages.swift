@@ -36,7 +36,7 @@ private struct PageHero<Action: View>: View {
                     HStack(spacing: 8) {
                         PageChip(text: item.platformShort, symbol: item.isPS4 ? Self.psSymbol : "iphone", tint: .white)
                         if let st = item.status {
-                            PageChip(text: st == .plays ? "Works Great" : st.label, symbol: "checkmark.seal.fill", tint: st.color)
+                            PageChip(text: st == .plays ? "运行良好" : st.label, symbol: "checkmark.seal.fill", tint: st.color)
                         }
                     }
                 }
@@ -148,7 +148,7 @@ struct GamePage: View {
 
     /// Another session is still in this process: Play would have to unload it, which is what made games slow and crash.
     private var blockedBy: String? {
-        if Router.shared.androidStarted { return "Android" }
+        if Router.shared.androidStarted { return "安卓" }
         let apk = app.apks.first
         guard let loaded = husk_native_loaded_apk().map({ String(cString: $0) }), loaded != apk else { return nil }
         return Self.name(ofLoaded: loaded)
@@ -162,18 +162,18 @@ struct GamePage: View {
 
     /// Under Play: what runs it, how long it has been played, and when last.
     private var gameFacts: [(symbol: String, text: String)] {
-        var f: [(symbol: String, text: String)] = [("cpu", app.report?.runnerName ?? "Translation Layer")]
+        var f: [(symbol: String, text: String)] = [("cpu", app.report?.runnerName ?? "转译层")]
         let t = Playtime.seconds(LibraryItem.game(app).id)
-        f.append(("gamecontroller", t > 0 ? Playtime.text(t) + " played" : "Not played yet"))
+        f.append(("gamecontroller", t > 0 ? Playtime.text(t) + " 游玩过" : "尚未游玩"))
         if let d = app.lastPlayed {
             let r = RelativeDateTimeFormatter(); r.unitsStyle = .short
-            f.append(("clock", "Last played\n" + r.localizedString(for: d, relativeTo: Date())))
+            f.append(("clock", "上次游玩\n" + r.localizedString(for: d, relativeTo: Date())))
         }
         return f
     }
 
     /// When it was last played is in the facts already: only a warning here.
-    private var subtitle: String { runs ? "" : "May not run on this iPhone" }
+    private var subtitle: String { runs ? "" : "可能无法在此 iPhone 上运行" }
 
     var body: some View {
         HuskPageList {
@@ -182,11 +182,9 @@ struct GamePage: View {
                     .heroRow()
             } footer: {
                 if isGeodeLauncher {
-                    Text("This is Geode's Android launcher. On Husk, Geode runs inside Geometry Dash instead: turn it on here "
-                       + "(or in Geometry Dash's settings, under Mods), then start Geometry Dash and use Geode's button on its "
-                       + "main menu to get mods. This APK supplies a library Geode needs, so keep it.")
+                    Text("这是 Geode 的安卓启动器。在 Husk 中，Geode 直接在 Geometry Dash 内运行：请在此处（或 Geometry Dash 设置的“模组”中）启用，然后启动 Geometry Dash，点击主菜单中的 Geode 按钮获取模组。此 APK 提供 Geode 所需的库，请保留。")
                 } else if !runs {
-                    Text("This APK has no ARM code Husk can run, so it will probably not start.")
+                    Text("此 APK 不包含 Husk 可运行的 ARM 代码，因此可能无法启动。")
                 }
             }
 
@@ -199,7 +197,7 @@ struct GamePage: View {
             }
             // why it stopped last time, until it plays again
             if let d = GameStatusStore.shared.diagnosis(app.id), d != preflight {
-                Section("Last Run") {
+                Section("上次运行") {
                     AppDiagnosisCard(diagnosis: d, showsEvidence: true)
                         .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
                 }
@@ -210,7 +208,7 @@ struct GamePage: View {
             }
 
             if !ShowcaseStore.shared.pictures(for: app.packageName).isEmpty {
-                Section("Screenshots") {
+                Section("截图") {
                     ShowcaseGallery(package: app.packageName)
                         .listRowInsets(EdgeInsets(top: 10, leading: 12, bottom: 10, trailing: 12))
                 }
@@ -218,52 +216,52 @@ struct GamePage: View {
 
             Section {
                 HuskLink(value: LibraryRoute.gameSettings(app.id)) {
-                    Label("Game Settings", systemImage: "slider.horizontal.3")
+                    Label("游戏设置", systemImage: "slider.horizontal.3")
                 }
                 HuskLink(value: LibraryRoute.gameReport(app.id)) {
-                    Label("Technical Details", systemImage: "cpu")
+                    Label("技术细节", systemImage: "cpu")
                 }
             }
 
             if !isGeodeLauncher {
                 Section {
-                    Button { backUp() } label: { Label("Back Up Saves", systemImage: "square.and.arrow.up") }
+                    Button { backUp() } label: { Label("备份存档", systemImage: "square.and.arrow.up") }
                         .disabled(savesBusy || !SaveBackup.hasData(app))
-                    Button { pickRestore() } label: { Label("Restore Saves", systemImage: "clock.arrow.circlepath") }
+                    Button { pickRestore() } label: { Label("恢复存档", systemImage: "clock.arrow.circlepath") }
                         .disabled(savesBusy || loadedNow)
                 } header: {
-                    Text("Saves")
+                    Text("存档")
                 } footer: {
                     if let savesMessage { Text(savesMessage) }
-                    else if loadedNow { Text("\(app.label) has been started in this run of Husk. Close Husk and open it again to restore saves.") }
-                    else { Text("A backup is a .zip of everything \(app.label) has saved in Husk, to keep in Files or move to another device.") }
+                    else if loadedNow { Text("\(app.label) 已在本次运行中启动过。请完全关闭 Husk 后重新打开，再恢复存档。") }
+                    else { Text("备份是 \(app.label) 在 Husk 中保存的全部内容的 .zip 文件，可保存在“文件”中或移到另一台设备。") }
                 }
             }
 
-            Section("About") {
-                LabeledContent("Runs With", value: app.report?.runnerName ?? "Unknown")
+            Section("关于") {
+                LabeledContent("运行方式", value: app.report?.runnerName ?? "未知")
                 if let st = GameStatusStore.shared.status(app.id) {
-                    LabeledContent("Last Result") {
+                    LabeledContent("上次运行结果") {
                         Label(st.result.label, systemImage: st.result.symbol).foregroundStyle(st.result.color)
                     }
                 }
-                LabeledContent("Last Played", value: app.lastPlayed.map { $0.formatted(date: .abbreviated, time: .shortened) } ?? "Never")
-                LabeledContent("Size", value: fileBytes(app.apks))
+                LabeledContent("上次游玩", value: app.lastPlayed.map { $0.formatted(date: .abbreviated, time: .shortened) } ?? "从未")
+                LabeledContent("大小", value: fileBytes(app.apks))
             }
 
             Section {
                 Button(role: .destructive) { confirmRemove = true } label: {
-                    Label("Remove Game", systemImage: "trash")
+                    Label("移除游戏", systemImage: "trash")
                 }
                 // on the button: on an iPad the dialog is a popover from whatever it is attached to, and the
                 // whole page's anchor put it outside the view on iPadOS 15 (#218)
-                .confirmationDialog("Remove \(app.label)?", isPresented: $confirmRemove, titleVisibility: .visible) {
-                    Button("Remove", role: .destructive) {
+                .confirmationDialog("移除 \(app.label)？", isPresented: $confirmRemove, titleVisibility: .visible) {
+                    Button("移除", role: .destructive) {
                         dismiss()
                         store.remove(app)
                     }
                 } message: {
-                    Text("The game and everything it saved here are deleted from Husk.")
+                    Text("游戏及其在这里保存的所有内容都会从 Husk 中删除。")
                 }
             }
         }
@@ -275,27 +273,27 @@ struct GamePage: View {
         .sheet(item: Binding(get: { backupFile.map(IdentifiedURL.init) }, set: { backupFile = $0?.url })) { f in
             ShareSheet(items: [f.url])
         }
-        .confirmationDialog("Replace \(app.label)'s saves?", isPresented: Binding(get: { confirmRestore != nil }, set: { if !$0 { confirmRestore = nil } }),
+        .confirmationDialog("替换 \(app.label) 的存档？", isPresented: Binding(get: { confirmRestore != nil }, set: { if !$0 { confirmRestore = nil } }),
                             titleVisibility: .visible) {
-            Button("Replace", role: .destructive) { if let url = confirmRestore { restore(url) } }
+            Button("替换", role: .destructive) { if let url = confirmRestore { restore(url) } }
         } message: {
-            Text("What \(app.label) has saved now is replaced by the backup. Back up first if you want to keep it.")
+            Text("\(app.label) 现在保存的内容会被备份替换。如果想保留，请先备份。")
         }
         .onReceive(NotificationCenter.default.publisher(for: TLUnityUIView.huskStopPlaying)) { _ in playing = false }
-        .alert("JIT-less mode could not prepare this game", isPresented: Binding(get: { prepareFailed != nil }, set: { if !$0 { prepareFailed = nil } })) {
-            Button("OK", role: .cancel) { }
+        .alert("无 JIT 模式无法准备此游戏", isPresented: Binding(get: { prepareFailed != nil }, set: { if !$0 { prepareFailed = nil } })) {
+            Button("好", role: .cancel) { }
         } message: {
             Text(prepareFailed ?? "")
         }
-        .confirmationDialog("Close Husk?", isPresented: $confirmQuit, titleVisibility: .visible) {
-            Button("Close Husk") {
+        .confirmationDialog("关闭 Husk？", isPresented: $confirmQuit, titleVisibility: .visible) {
+            Button("关闭 Husk") {
                 Router.shared.switchTo(app.id)
                 CrashReport.gameEnded()
                 HuskLog.flushNow()
                 exit(0)
             }
         } message: {
-            Text("\(blockedBy ?? "The other game") is still loaded and only one game can run per session. Husk closes; open it again and \(app.label) starts by itself.")
+            Text("\(blockedBy ?? "The other game") 仍在运行，每次只能运行一个游戏。Husk 将关闭；重新打开后 \(app.label) 会自动启动。")
         }
         .id(jit.attachGeneration)
         .onAppear {
@@ -310,7 +308,7 @@ struct GamePage: View {
     /// (a newer release, its resources) is fetched first.
     private func play() {
         if JITLess.enabled, SigningCertificate.credentials() != nil, preparing == nil {
-            preparing = "Preparing for JIT-less mode…"
+            preparing = "正在为无 JIT 模式做准备…"
             Task {
                 do {
                     try await JITLess.prepare(apks: app.apks) { text in Task { @MainActor in preparing = text } }
@@ -364,12 +362,12 @@ struct GamePage: View {
 
     fileprivate static func name(ofLoaded loaded: String) -> String {
         if loaded.hasPrefix("ps4:") {
-            return PS4Store.shared.game(String(loaded.dropFirst(4)))?.title ?? "Another game"
+            return PS4Store.shared.game(String(loaded.dropFirst(4)))?.title ?? "其他游戏"
         }
         if let other = TranslationLayerStore.shared.apps.first(where: { $0.apks.first == loaded }) {
             return other.label
         }
-        return "Another game"
+        return "其他游戏"
     }
 
     private func backUp() {
@@ -401,7 +399,7 @@ struct GamePage: View {
             await MainActor.run {
                 savesBusy = false
                 switch result {
-                case .success(let n): savesMessage = "Restored \(n) file\(n == 1 ? "" : "s") from \(url.lastPathComponent)."
+                case .success(let n): savesMessage = "已从 \(url.lastPathComponent) 恢复 \(n) 个文件。"
                 case .failure(let e): savesMessage = e.localizedDescription
                 }
             }
@@ -417,7 +415,7 @@ struct GamePage: View {
     private var primary: some View {
         if isGeodeLauncher {
             if let gd = geometryDash {
-                BigButton(title: TLAppSettings.load(gd.id).geode ? "Geode Is On for Geometry Dash" : "Turn On Geode for Geometry Dash",
+                BigButton(title: TLAppSettings.load(gd.id).geode ? "已为 Geometry Dash 启用 Geode" : "为 Geometry Dash 启用 Geode",
                           systemImage: "puzzlepiece.extension.fill", prominent: !TLAppSettings.load(gd.id).geode) {
                     var s = TLAppSettings.load(gd.id)
                     s.geode = true
@@ -425,22 +423,22 @@ struct GamePage: View {
                     Task { await GeodeSupport.shared.prepare(gd) }
                 }
             } else {
-                BigButton(title: "Add Geometry Dash First", systemImage: "plus", prominent: false) { }.disabled(true)
+                BigButton(title: "请先添加 Geometry Dash", systemImage: "plus", prominent: false) { }.disabled(true)
             }
         } else if let preparing {
             HStack(spacing: 10) { ProgressView(); Text(preparing).foregroundStyle(.secondary).lineLimit(1) }
                 .frame(maxWidth: .infinity).frame(height: 50)
         } else if blockedBy != nil {
-            BigButton(title: "Close Husk to Play", systemImage: "xmark.circle", prominent: false) { confirmQuit = true }
+            BigButton(title: "关闭 Husk 后游玩", systemImage: "xmark.circle", prominent: false) { confirmQuit = true }
         } else if !Launcher.jitOn && !JITLess.enabled {
             if jit.busy {
-                HStack(spacing: 10) { ProgressView(); Text(jit.status ?? "Turning on JIT…").foregroundStyle(.secondary) }
+                HStack(spacing: 10) { ProgressView(); Text(jit.status ?? "正在开启 JIT…").foregroundStyle(.secondary) }
                     .frame(maxWidth: .infinity).frame(height: 50)
             } else {
-                BigButton(title: "Turn On JIT to Play", systemImage: "bolt.fill", action: turnOnJIT)
+                BigButton(title: "开启 JIT 后游玩", systemImage: "bolt.fill", action: turnOnJIT)
             }
         } else {
-            BigButton(title: runs ? "Play" : "Try to Run", systemImage: "play.fill", prominent: runs) { play() }
+            BigButton(title: runs ? "开始游戏" : "尝试运行", systemImage: "play.fill", prominent: runs) { play() }
         }
     }
 }
@@ -458,7 +456,7 @@ struct PS4GamePage: View {
 
     /// QEMU Android, or another game, still holds this process.
     private var blockedBy: String? {
-        if Router.shared.androidStarted { return "Android" }
+        if Router.shared.androidStarted { return "安卓" }
         guard let loaded = husk_native_loaded_apk().map({ String(cString: $0) }), loaded != game.libraryID else { return nil }
         return GamePage.name(ofLoaded: loaded)
     }
@@ -469,12 +467,12 @@ struct PS4GamePage: View {
 
     /// The same facts as an Android game's: version, how long it has been played, and when last.
     private var facts: [(symbol: String, text: String)] {
-        var f: [(symbol: String, text: String)] = [("cpu", "PS4 layer" + (game.version.map { "\nv\($0)" } ?? ""))]
+        var f: [(symbol: String, text: String)] = [("cpu", "PS4 转译层" + (game.version.map { "\nv\($0)" } ?? ""))]
         let t = Playtime.seconds(item.id)
-        f.append(("gamecontroller", t > 0 ? Playtime.text(t) + " played" : "Not played yet"))
+        f.append(("gamecontroller", t > 0 ? Playtime.text(t) + " 游玩过" : "尚未游玩"))
         if let d = game.lastPlayed {
             let r = RelativeDateTimeFormatter(); r.unitsStyle = .short
-            f.append(("clock", "Last played\n" + r.localizedString(for: d, relativeTo: Date())))
+            f.append(("clock", "上次游玩\n" + r.localizedString(for: d, relativeTo: Date())))
         }
         return f
     }
@@ -486,32 +484,32 @@ struct PS4GamePage: View {
             if !PS4Store.available {
                 Section {
                     Text(PS4Store.moduleURL == nil
-                         ? "This build of Husk does not include the PS4 layer."
-                         : "PS4 games need iOS 17.4 or later.")
+                         ? "此版本的 Husk 不包含 PS4 层。"
+                         : "PS4 游戏需要 iOS 17.4 或更高版本。")
                         .foregroundStyle(.secondary)
                 }
             }
-            Section("About") {
-                LabeledContent("Runs With", value: "Husk's PS4 layer")
-                LabeledContent("Title ID", value: game.titleID)
-                if let v = game.version { LabeledContent("Version", value: v) }
-                LabeledContent("Last Played", value: game.lastPlayed.map { $0.formatted(date: .abbreviated, time: .shortened) } ?? "Never")
-                LabeledContent("Folder", value: "PS4 Games/" + game.folder.lastPathComponent)
+            Section("关于") {
+                LabeledContent("运行方式", value: "Husk 的 PS4 转译层")
+                LabeledContent("游戏 ID", value: game.titleID)
+                if let v = game.version { LabeledContent("版本", value: v) }
+                LabeledContent("上次游玩", value: game.lastPlayed.map { $0.formatted(date: .abbreviated, time: .shortened) } ?? "从未")
+                LabeledContent("文件夹", value: "PS4 Games/" + game.folder.lastPathComponent)
             }
         }
         .listStyle(.insetGrouped)
         .navigationTitle(game.title)
         .navigationBarTitleDisplayMode(.inline)
         .fullScreenCover(isPresented: $playing) { PS4PlayView(game: game) }
-        .confirmationDialog("Close Husk?", isPresented: $confirmQuit, titleVisibility: .visible) {
-            Button("Close Husk") {
+        .confirmationDialog("关闭 Husk？", isPresented: $confirmQuit, titleVisibility: .visible) {
+            Button("关闭 Husk") {
                 Router.shared.switchTo(game.libraryID)
                 CrashReport.gameEnded()
                 HuskLog.flushNow()
                 exit(0)
             }
         } message: {
-            Text("\(blockedBy ?? "The other game") is still loaded and only one game can run per session. Husk closes; open it again and \(game.title) starts by itself.")
+            Text("\(blockedBy ?? "The other game") 仍在运行，每次只能运行一个游戏。Husk 将关闭；重新打开后 \(game.title) 会自动启动。")
         }
         .id(jit.attachGeneration)
         .onAppear {
@@ -524,18 +522,18 @@ struct PS4GamePage: View {
     @ViewBuilder
     private var primary: some View {
         if !PS4Store.available {
-            BigButton(title: "Can't Play Here", systemImage: "xmark.octagon", prominent: false) { }.disabled(true)
+            BigButton(title: "无法在此游玩", systemImage: "xmark.octagon", prominent: false) { }.disabled(true)
         } else if blockedBy != nil {
-            BigButton(title: "Close Husk to Play", systemImage: "xmark.circle", prominent: false) { confirmQuit = true }
+            BigButton(title: "关闭 Husk 后游玩", systemImage: "xmark.circle", prominent: false) { confirmQuit = true }
         } else if !Launcher.jitOn {
             if jit.busy {
-                HStack(spacing: 10) { ProgressView(); Text(jit.status ?? "Turning on JIT…").foregroundStyle(.secondary) }
+                HStack(spacing: 10) { ProgressView(); Text(jit.status ?? "正在开启 JIT…").foregroundStyle(.secondary) }
                     .frame(maxWidth: .infinity).frame(height: 50)
             } else {
-                BigButton(title: "Turn On JIT to Play", systemImage: "bolt.fill", action: turnOnJIT)
+                BigButton(title: "开启 JIT 后游玩", systemImage: "bolt.fill", action: turnOnJIT)
             }
         } else {
-            BigButton(title: "Play", systemImage: "play.fill") { playPS4() }
+            BigButton(title: "开始游戏", systemImage: "play.fill") { playPS4() }
         }
     }
 }
@@ -561,57 +559,57 @@ struct AndroidAppPage: View {
     var body: some View {
         HuskPageList {
             Section {
-                PageHero(item: item, subtitle: item.usedText ?? "Runs inside Android") { primary }
+                PageHero(item: item, subtitle: item.usedText ?? "在安卓中运行") { primary }
                     .heroRow()
             } footer: {
                 if router.pendingAndroidLaunch == app.name, !host.isReady {
-                    Text("\(live.label) opens by itself once Android has started.")
+                    Text("安卓启动后，\(live.label) 会自动打开。")
                 }
             }
 
             if !ShowcaseStore.shared.pictures(for: app.name).isEmpty {
-                Section("Screenshots") {
+                Section("截图") {
                     ShowcaseGallery(package: app.name)
                         .listRowInsets(EdgeInsets(top: 10, leading: 12, bottom: 10, trailing: 12))
                 }
             }
 
-            Section("About") {
-                LabeledContent("Version", value: live.version ?? "—")
-                LabeledContent("Size", value: live.sizeBytes.map { ByteCountFormatter.string(fromByteCount: $0, countStyle: .file) } ?? "—")
-                LabeledContent("Package", value: live.name)
-                if let b = live.bitness { LabeledContent("Architecture", value: b) }
+            Section("关于") {
+                LabeledContent("版本", value: live.version ?? "—")
+                LabeledContent("大小", value: live.sizeBytes.map { ByteCountFormatter.string(fromByteCount: $0, countStyle: .file) } ?? "—")
+                LabeledContent("包名", value: live.name)
+                if let b = live.bitness { LabeledContent("处理器架构", value: b) }
             }
 
             Section {
                 Button { router.openFiles(at: "/sdcard/Android/data/\(app.name)") } label: {
-                    Label("Open in Files", systemImage: "folder")
+                    Label("在“文件”中打开", systemImage: "folder")
                 }
                 .disabled(!canOpen)
                 Button { appInfo() } label: {
-                    Label("Android App Info", systemImage: "info.circle")
+                    Label("安卓应用信息", systemImage: "info.circle")
                 }
                 .disabled(!canOpen)
                 Button { UIPasteboard.general.string = app.name } label: {
-                    Label("Copy Package Name", systemImage: "doc.on.doc")
+                    Label("复制包名", systemImage: "doc.on.doc")
                 }
             }
 
             Section {
                 Button(role: .destructive) { confirmUninstall = true } label: {
-                    Label("Uninstall", systemImage: "trash")
+                    Label("卸载", systemImage: "trash")
                 }
                 .disabled(!canOpen)
-                .confirmationDialog("Uninstall \(live.label)?", isPresented: $confirmUninstall, titleVisibility: .visible) {
-                    Button("Uninstall", role: .destructive) {
+                .confirmationDialog("卸载 \(live.label)？", isPresented: $confirmUninstall, titleVisibility: .visible) {
+                    Button("卸载", role: .destructive) {
                         host.uninstall(app.name)
                         dismiss()
                     }
                 } message: {
-                    Text("Its data goes with it.")
+                    Text("它的数据会一起删除。")
                 }
             } footer: {
-                if !canOpen { Text("Start Android to uninstall or look inside the app.") }
+                if !canOpen { Text("启动安卓以卸载或查看应用内容。") }
             }
         }
         .listStyle(.insetGrouped)
@@ -622,23 +620,23 @@ struct AndroidAppPage: View {
     @ViewBuilder
     private var primary: some View {
         if canOpen {
-            BigButton(title: "Open", systemImage: "play.fill") {
+            BigButton(title: "打开", systemImage: "play.fill") {
                 host.launch(app.name) { router.openGuest() }
             }
         } else if router.androidStarted {
             VStack(spacing: 10) {
-                BigButton(title: "Starting Android…", systemImage: "hourglass", prominent: false) { }
+                BigButton(title: "正在启动安卓…", systemImage: "hourglass", prominent: false) { }
                     .disabled(true)
                 if runner.bootProgress > 0 { ProgressView(value: Double(runner.bootProgress), total: 100) }
             }
         } else if guest.state == .ready {
-            BigButton(title: Launcher.jitOn ? "Start Android and Open" : "Turn On JIT", systemImage: Launcher.jitOn ? "play.fill" : "bolt.fill") {
+            BigButton(title: Launcher.jitOn ? "启动安卓并打开" : "开启 JIT", systemImage: Launcher.jitOn ? "play.fill" : "bolt.fill") {
                 if Launcher.jitOn { router.pendingAndroidLaunch = app.name }
                 router.startAndroid()
             }
         } else {
             HuskLink(value: LibraryRoute.androidSystem) {
-                Label("Get Android First", systemImage: "arrow.down.circle")
+                Label("请先安装安卓", systemImage: "arrow.down.circle")
                     .font(.system(.headline, design: .rounded))
                     .frame(maxWidth: .infinity).frame(height: 50)
                     .foregroundStyle(.white)
@@ -686,42 +684,42 @@ struct AndroidSystemPage: View {
 
             if host.isReady {
                 Section {
-                    Button { router.openFiles(at: FilesTab.root) } label: { Label("Files", systemImage: "folder") }
+                    Button { router.openFiles(at: FilesTab.root) } label: { Label("文件", systemImage: "folder") }
                     Button { runner.saveState(reason: "asked from the Android page") } label: {
-                        Label(runner.isSavingState ? "Saving…" : "Save Android Now", systemImage: "externaldrive.badge.checkmark")
+                        Label(runner.isSavingState ? "正在保存…" : "立即保存安卓", systemImage: "externaldrive.badge.checkmark")
                     }
                     .disabled(runner.isSavingState)
                 } footer: {
-                    Text("Saving keeps Android exactly as it is, so the next start skips booting.")
+                    Text("保存会让安卓保持原样，下次启动可跳过开机过程。")
                 }
             }
 
-            Section("Settings") {
-                NavigationLink { PerformanceSettings() } label: { Label("Performance", systemImage: "speedometer") }
-                NavigationLink { InputSettings() } label: { Label("Input", systemImage: "hand.tap") }
-                NavigationLink { NetworkSettings() } label: { Label("Network", systemImage: "globe") }
-                NavigationLink { SavedMachineSettings() } label: { Label("Saved Machine", systemImage: "externaldrive") }
+            Section("设置") {
+                NavigationLink { PerformanceSettings() } label: { Label("性能", systemImage: "speedometer") }
+                NavigationLink { InputSettings() } label: { Label("输入", systemImage: "hand.tap") }
+                NavigationLink { NetworkSettings() } label: { Label("网络", systemImage: "globe") }
+                NavigationLink { SavedMachineSettings() } label: { Label("保存的机器", systemImage: "externaldrive") }
             }
 
         }
         .listStyle(.insetGrouped)
-        .navigationTitle("Android")
+        .navigationTitle("安卓")
         .navigationBarTitleDisplayMode(.inline)
         .animation(.easeInOut(duration: 0.2), value: status)
     }
 
     private var status: String {
         if running {
-            if host.isReady { return "Running" }
-            return runner.setupMessage ?? (runner.bootProgress > 0 ? "Starting · \(runner.bootProgress)%" : "Starting…")
+            if host.isReady { return "运行中" }
+            return runner.setupMessage ?? (runner.bootProgress > 0 ? "正在启动 · \(runner.bootProgress)%" : "正在开始…")
         }
         switch guest.state {
-        case .missing: return "Not downloaded yet"
+        case .missing: return "尚未下载"
         case .downloading(_, let received, let total):
-            return "Downloading · \(bytes(received)) of \(total > 0 ? bytes(total) : "…")"
-        case .installing: return "Installing…"
-        case .failed: return "Something went wrong"
-        case .ready: return Launcher.jitOn ? "Ready to start" : "Needs JIT to start"
+            return "正在下载 · \(bytes(received)) / \(total > 0 ? bytes(total) : "…")"
+        case .installing: return "正在安装…"
+        case .failed: return "出现问题"
+        case .ready: return Launcher.jitOn ? "可以启动" : "需要开启 JIT 才能启动"
         }
     }
 
@@ -734,7 +732,7 @@ struct AndroidSystemPage: View {
     private var note: String? {
         guard !running else { return nil }
         switch guest.state {
-        case .missing: return "Husk's Android runtime is about 760 MB. Android itself follows once it is installed."
+        case .missing: return "Husk 的安卓运行环境约为 760 MB，安装完成后将继续获取安卓系统本身。"
         case .failed(let message): return message
         default: return nil
         }
@@ -744,30 +742,30 @@ struct AndroidSystemPage: View {
     private var primary: some View {
         if running {
             if host.isReady {
-                BigButton(title: "Open Android", systemImage: "play.fill") { open() }
+                BigButton(title: "打开安卓", systemImage: "play.fill") { open() }
             } else {
-                BigButton(title: "Watch It Start", systemImage: "eye", prominent: false) { open() }
+                BigButton(title: "查看启动过程", systemImage: "eye", prominent: false) { open() }
             }
         } else {
             switch guest.state {
             case .missing:
-                BigButton(title: "Download Android", systemImage: "arrow.down.circle") {
+                BigButton(title: "下载安卓", systemImage: "arrow.down.circle") {
                     // Claim the JIT region before the download: it takes a while, and StikDebug lets go by the end of it.
                     JITBootstrap.prewarm()
                     guest.download()
                 }
             case .downloading:
-                BigButton(title: "Cancel Download", systemImage: "xmark", prominent: false) { guest.cancel() }
+                BigButton(title: "取消下载", systemImage: "xmark", prominent: false) { guest.cancel() }
             case .installing:
                 ProgressView().frame(height: 50)
             case .failed:
-                BigButton(title: "Try Again", systemImage: "arrow.clockwise") { JITBootstrap.prewarm(); guest.download() }
+                BigButton(title: "重试", systemImage: "arrow.clockwise") { JITBootstrap.prewarm(); guest.download() }
             case .ready:
                 if jit.busy {
-                    HStack(spacing: 10) { ProgressView(); Text(jit.status ?? "Turning on JIT…").foregroundStyle(.secondary) }
+                    HStack(spacing: 10) { ProgressView(); Text(jit.status ?? "正在开启 JIT…").foregroundStyle(.secondary) }
                         .frame(maxWidth: .infinity).frame(height: 50)
                 } else {
-                    BigButton(title: Launcher.jitOn ? "Start Android" : "Turn On JIT", systemImage: Launcher.jitOn ? "power" : "bolt.fill") {
+                    BigButton(title: Launcher.jitOn ? "启动安卓" : "开启 JIT", systemImage: Launcher.jitOn ? "power" : "bolt.fill") {
                         router.startAndroid()
                     }
                 }

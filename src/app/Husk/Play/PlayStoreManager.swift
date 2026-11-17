@@ -78,7 +78,7 @@ final class PlayStoreManager: ObservableObject {
     func signIn(email: String, oauthToken: String) async {
         isLoading = true
         errorMessage = nil
-        statusMessage = "Exchanging token with Google…"
+        statusMessage = "正在与 Google 交换令牌…"
 
         do {
             // 1. Trade oauth_token for aasToken
@@ -86,18 +86,18 @@ final class PlayStoreManager: ObservableObject {
             var s = PlaySession(email: email, aasToken: aas)
 
             // 2. Checkin (register device)
-            statusMessage = "Registering device with Google Play…"
+            statusMessage = "正在向 Google Play 注册设备…"
             let (gsfID, consistency) = try await PlayAPI.checkin()
             s.gsfID = gsfID
             s.consistencyToken = consistency
 
             // 3. Acquire bearer token for Play Store
-            statusMessage = "Authorizing Google Play session…"
+            statusMessage = "正在授权 Google Play 会话…"
             let bearer = try await PlayAPI.playToken(s)
             s.bearer = bearer
 
             // 4. Upload device config (Pixel 8)
-            statusMessage = "Uploading device profile…"
+            statusMessage = "正在上传设备配置…"
             let configToken = try await PlayAPI.uploadDeviceConfig(s)
             s.deviceConfigToken = configToken
 
@@ -121,7 +121,7 @@ final class PlayStoreManager: ObservableObject {
     func signInAsGuest(customDispenserURL: String? = nil) async {
         isLoading = true
         errorMessage = nil
-        statusMessage = "Connecting to Aurora guest server…"
+        statusMessage = "正在连接 Aurora 访客服务器…"
 
         do {
             let url = customDispenserURL ?? PlayAPI.defaultDispenserURL
@@ -251,7 +251,7 @@ final class PlayStoreManager: ObservableObject {
                 self.downloadTasks[pkg] = nil
                 self.downloadTitles.removeValue(forKey: pkg)
                 if Task.isCancelled || error is CancellationError || (error as? URLError)?.code == .cancelled { return }
-                self.errorMessage = "Failed to download \(app.title): \(error.localizedDescription)"
+                self.errorMessage = "下载 \(app.title) 失败：\(error.localizedDescription)"
                 HuskLog.log("store", "Download error for \(pkg): \(error.localizedDescription)")
             }
         }

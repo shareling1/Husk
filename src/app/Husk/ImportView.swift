@@ -16,38 +16,38 @@ struct ImportView: View {
                 VStack(alignment: .leading, spacing: 22) {
                     dropZone
                     VStack(alignment: .leading, spacing: 10) {
-                        Text("Supported formats").font(.system(size: 15, weight: .semibold)).foregroundStyle(Console.text)
+                        Text("支持的格式").font(.system(size: 15, weight: .semibold)).foregroundStyle(Console.text)
                         format("APK")
-                        format("Split APK (.xapk, .apkm, .apks)")
-                        format("OBB / Asset Packs")
-                        format("PS4 game folder (extracted)")
+                        format("分包 APK（.xapk、.apkm、.apks）")
+                        format("OBB / 资源包")
+                        format("PS4 游戏文件夹（已解压）")
                     }
                     .padding(16)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .background(Console.card, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
 
                     VStack(alignment: .leading, spacing: 10) {
-                        Text("Or get it from").font(.system(size: 15, weight: .semibold)).foregroundStyle(Console.text)
+                        Text("或者从这里获取").font(.system(size: 15, weight: .semibold)).foregroundStyle(Console.text)
                         source("Play Store", "bag.fill") { dismiss(); router.tab = .store }
-                        source("External Link", "link") { askingLink = true }
+                        source("外部链接", "link") { askingLink = true }
                     }
                 }
                 .padding(20)
             }
             .background(Console.page.ignoresSafeArea())
-            .navigationTitle("Import APK")
+            .navigationTitle("导入 APK")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Close") { dismiss() } } }
-            .alert("Download From a Link", isPresented: $askingLink) {
+            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("关闭") { dismiss() } } }
+            .alert("从链接下载", isPresented: $askingLink) {
                 TextField("https://…", text: $link).textInputAutocapitalization(.never).autocorrectionDisabled()
-                Button("Download") {
+                Button("下载") {
                     let l = link; link = ""
                     Task { await Downloads.shared.add(link: l) }
                     dismiss(); router.showDownloads = true
                 }
-                Button("Cancel", role: .cancel) { link = "" }
+                Button("取消", role: .cancel) { link = "" }
             } message: {
-                Text("A direct link to an APK, a bundle or a zip. It shows in Downloads, then Husk asks where it goes.")
+                Text("APK、应用包或 zip 的直接链接。它会出现在“下载”中，之后 Husk 会询问放到哪里。")
             }
         }
     }
@@ -57,11 +57,11 @@ struct ImportView: View {
             Image(systemName: "doc.badge.plus")
                 .font(.system(size: 34, weight: .regular))
                 .foregroundStyle(Console.textDim)
-            Text(UIDevice.current.userInterfaceIdiom == .pad ? "Drop an APK file here" : "Pick an APK from Files")
+            Text(UIDevice.current.userInterfaceIdiom == .pad ? "把 APK 文件拖到这里" : "从“文件”中选择 APK")
                 .font(.system(size: 15)).foregroundStyle(Console.textDim)
             if UIDevice.current.userInterfaceIdiom == .pad { Text("or").font(.system(size: 13)).foregroundStyle(Console.textDim) }
             Button { dismiss(); router.addSomething() } label: {
-                Text("Select File").font(.system(size: 16, weight: .semibold)).foregroundStyle(.white)
+                Text("选择文件").font(.system(size: 16, weight: .semibold)).foregroundStyle(.white)
                     .padding(.horizontal, 28).frame(height: 44)
                     .background(Console.raised, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
             }

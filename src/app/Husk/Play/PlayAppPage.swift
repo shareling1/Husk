@@ -36,7 +36,7 @@ struct PlayAppDetailSheet: View {
             .navigationTitle(app.title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Done") { dismiss() } }
+                ToolbarItem(placement: .cancellationAction) { Button("完成") { dismiss() } }
                 ToolbarItem(placement: .primaryAction) {
                     HuskShareLink(item: playURL, subject: Text(app.title), message: nil) { Image(systemName: "square.and.arrow.up") }
                 }
@@ -99,10 +99,10 @@ struct PlayAppDetailSheet: View {
             if downloading {
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
-                        Text(progress.map { "Downloading… \(Int($0 * 100))%" } ?? "Downloading…")
+                        Text(progress.map { "正在下载… \(Int($0 * 100))%" } ?? "正在下载…")
                             .font(.system(size: 14, weight: .semibold)).foregroundStyle(Console.text)
                         Spacer()
-                        Button("Cancel", role: .destructive) { manager.cancelDownload(app.id) }
+                        Button("取消", role: .destructive) { manager.cancelDownload(app.id) }
                             .font(.system(size: 14, weight: .semibold))
                     }
                     if let progress { ProgressView(value: progress).tint(Theme.accent) } else { ProgressView().frame(maxWidth: .infinity) }
@@ -114,7 +114,7 @@ struct PlayAppDetailSheet: View {
                     manager.downloadAndInstall(app: app)
                     dismiss()
                 } label: {
-                    Text(app.isFree ? "Install" : app.formattedPrice)
+                    Text(app.isFree ? "安装" : app.formattedPrice)
                         .font(.system(size: 17, weight: .semibold))
                         .foregroundStyle(.white)
                         .frame(maxWidth: .infinity)
@@ -131,12 +131,12 @@ struct PlayAppDetailSheet: View {
     private var stats: some View {
         var items: [(value: String, label: LocalizedStringKey, icon: String?)] = []
         if app.rating > 0 {
-            items.append((String(format: "%.1f", app.rating), app.reviews.isEmpty ? "Rating" : "\(app.reviews) reviews", "star.fill"))
+            items.append((String(format: "%.1f", app.rating), app.reviews.isEmpty ? "评分" : "\(app.reviews) 条评价", "star.fill"))
         }
-        if !app.installs.isEmpty { items.append((app.installs, "Downloads", nil)) }
-        if !app.contentRating.isEmpty { items.append((app.contentRating, "Rated for", nil)) }
-        if app.sizeBytes > 0 { items.append((ByteCountFormatter.string(fromByteCount: app.sizeBytes, countStyle: .file), "Size", nil)) }
-        if !app.versionString.isEmpty { items.append((app.versionString, "Version", nil)) }
+        if !app.installs.isEmpty { items.append((app.installs, "下载", nil)) }
+        if !app.contentRating.isEmpty { items.append((app.contentRating, "分级", nil)) }
+        if app.sizeBytes > 0 { items.append((ByteCountFormatter.string(fromByteCount: app.sizeBytes, countStyle: .file), "大小", nil)) }
+        if !app.versionString.isEmpty { items.append((app.versionString, "版本", nil)) }
         // three to a row, the rest on the next one
         let columns = Array(repeating: GridItem(.flexible(), spacing: 8), count: min(3, max(1, items.count)))
         return LazyVGrid(columns: columns, spacing: 16) {
@@ -210,7 +210,7 @@ struct PlayAppDetailSheet: View {
 
     private var highlights: some View {
         VStack(alignment: .leading, spacing: 10) {
-            sectionTitle("Highlights")
+            sectionTitle("亮点")
             VStack(alignment: .leading, spacing: 10) {
                 ForEach(app.highlights, id: \.self) { line in
                     HStack(alignment: .top, spacing: 10) {
@@ -228,7 +228,7 @@ struct PlayAppDetailSheet: View {
 
     private var about: some View {
         VStack(alignment: .leading, spacing: 10) {
-            sectionTitle(app.isGame ? "About this game" : "About this app")
+            sectionTitle(app.isGame ? "关于此游戏" : "关于此应用")
             if !app.tagline.isEmpty {
                 Text(app.tagline).font(.system(size: 15, weight: .semibold)).foregroundStyle(Console.text)
                     .fixedSize(horizontal: false, vertical: true)
@@ -256,7 +256,7 @@ struct PlayAppDetailSheet: View {
     private var whatsNew: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .firstTextBaseline) {
-                sectionTitle("What's new")
+                sectionTitle("新功能")
                 Spacer()
                 if !app.updated.isEmpty { Text(app.updated).font(.system(size: 13)).foregroundStyle(Console.textDim) }
             }
@@ -268,22 +268,22 @@ struct PlayAppDetailSheet: View {
 
     private var information: some View {
         VStack(alignment: .leading, spacing: 10) {
-            sectionTitle("Information")
+            sectionTitle("信息")
             VStack(spacing: 0) {
-                infoRow("Developer", app.developer)
-                infoRow("Updated", app.updated)
-                infoRow("Released", app.released)
-                infoRow("Version", app.versionString)
-                if app.sizeBytes > 0 { infoRow("Size", ByteCountFormatter.string(fromByteCount: app.sizeBytes, countStyle: .file)) }
-                infoRow("Downloads", app.installs)
-                infoRow("Rated for", app.contentRating)
-                infoRow("Ads", app.ads)
-                infoRow("In-app purchases", app.purchases)
-                infoRow("Package", app.id, mono: true)
-                linkRow("Website", "safari", URL(string: app.website))
-                linkRow("Email", "envelope", app.email.isEmpty ? nil : URL(string: "mailto:\(app.email)"))
-                linkRow("Privacy policy", "hand.raised", URL(string: app.privacy))
-                linkRow("View on Google Play", "arrow.up.right.square", playURL, last: true)
+                infoRow("开发者", app.developer)
+                infoRow("更新日期", app.updated)
+                infoRow("发布日期", app.released)
+                infoRow("版本", app.versionString)
+                if app.sizeBytes > 0 { infoRow("大小", ByteCountFormatter.string(fromByteCount: app.sizeBytes, countStyle: .file)) }
+                infoRow("下载", app.installs)
+                infoRow("分级", app.contentRating)
+                infoRow("广告", app.ads)
+                infoRow("应用内购买", app.purchases)
+                infoRow("包名", app.id, mono: true)
+                linkRow("网站", "safari", URL(string: app.website))
+                linkRow("电子邮件", "envelope", app.email.isEmpty ? nil : URL(string: "mailto:\(app.email)"))
+                linkRow("隐私政策", "hand.raised", URL(string: app.privacy))
+                linkRow("在 Google Play 上查看", "arrow.up.right.square", playURL, last: true)
             }
             .background(Console.card, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).stroke(Console.outline, lineWidth: 0.5))
@@ -363,7 +363,7 @@ private struct ExpandableText: View {
                 .lineLimit(expanded ? nil : lines)
                 .fixedSize(horizontal: false, vertical: true)
             if long {
-                Button(expanded ? "Less" : "More") { withAnimation(.easeInOut(duration: 0.2)) { expanded.toggle() } }
+                Button(expanded ? "收起" : "更多") { withAnimation(.easeInOut(duration: 0.2)) { expanded.toggle() } }
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(Theme.accent)
             }

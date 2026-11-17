@@ -43,18 +43,17 @@ final class SigningCertificate: ObservableObject {
         HuskLog.log("sign", "opening .p12: \(data.count) bytes, password length \(password.count)")
         guard let opened = Self.open(data, password) else {
             lastError = fromStore
-                ? "The store's certificate could not be opened. If you have a .p12, import that with the password you set when you exported it."
+                ? "无法打开商店证书。如果有 .p12 文件，请导入并输入导出时设置的密码。"
                 : (password.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                   ? "That .p12 needs a password. Enter the one you set when you exported it."
-                   : "That password did not open the .p12. Check it, or export the certificate again.")
+                   ? "此 .p12 需要密码，请输入导出时设置的密码。"
+                   : "密码无法解锁此 .p12。请检查密码，或重新导出证书。")
             return
         }
         if let team = Self.installedTeamID, team != opened.info.teamID {
-            lastError = "This certificate belongs to team \(opened.info.teamID), but Husk was installed with team \(team). "
-                      + "Use the certificate of the Apple ID that installed Husk."
+            lastError = "此证书属于团队 \(opened.info.teamID)，而 Husk 安装时使用的是团队 \(team)。请使用安装 Husk 的 Apple ID 对应的证书。"
             return
         }
-        guard Self.store(data, opened.password) else { lastError = "The certificate could not be saved in the Keychain."; return }
+        guard Self.store(data, opened.password) else { lastError = "无法将证书保存到钥匙串。"; return }
         info = opened.info
         lastError = nil
         HuskLog.log("sign", "certificate imported: team \(opened.info.teamID), expires \(opened.info.expires)")
@@ -67,7 +66,7 @@ final class SigningCertificate: ObservableObject {
               let url = URL(string: "\(store.scheme)://certificate?callback_template=\(encoded)") else { return }
         HuskLog.log("sign", "asking \(store.title) for its certificate")
         UIApplication.shared.open(url) { [weak self] ok in
-            if !ok { Task { @MainActor in self?.lastError = "\(store.title) is not installed, or did not answer." } }
+            if !ok { Task { @MainActor in self?.lastError = "未安装 \(store.title)，或该应用没有响应。" } }
         }
     }
 
@@ -84,7 +83,7 @@ final class SigningCertificate: ObservableObject {
             return s
         }
         guard let cert = value("cert"), let data = Self.p12(fromBase64: cert), data.count > 32 else {
-            lastError = "The store's answer had no certificate in it."
+            lastError = "商店的回复中没有证书。"
             return true
         }
         var password = value("password") ?? value("pass") ?? ""

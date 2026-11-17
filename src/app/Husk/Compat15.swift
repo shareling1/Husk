@@ -65,7 +65,7 @@ final class HuskNavigation: ObservableObject {
             if let view = build(value) { return view }
         }
         return AnyView(
-            Text("This page could not be opened.")
+            Text("无法打开此页面。")
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         )
@@ -130,7 +130,7 @@ struct NavigationStack<Root: View>: View {
                             .toolbar {
                                 ToolbarItem(placement: .navigationBarLeading) {
                                     Button { navigation.setPath(Array(navigation.path.dropLast())) } label: {
-                                        Label("Back", systemImage: "chevron.left").labelStyle(.titleAndIcon)
+                                        Label("返回", systemImage: "chevron.left").labelStyle(.titleAndIcon)
                                     }
                                 }
                             }

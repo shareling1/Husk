@@ -47,7 +47,7 @@ struct OnboardingView: View {
     @State private var forward = true
     @State private var tourPage = 0
 
-    @State private var language = OnboardingView.defaultLanguage
+    @State private var language = UserDefaults.standard.string(forKey: Onboarding.languageKey) ?? "zh-Hans"
     @State private var region = Locale.current.huskRegionCode ?? "US"
     @State private var timeZone = TimeZone.current.identifier
     @State private var query = ""
@@ -75,19 +75,19 @@ struct OnboardingView: View {
             NavigationView {
                 Form {
                     Section {
-                        SecureField("Password", text: $p12Password)
+                        SecureField("密码", text: $p12Password)
                             .textInputAutocapitalization(.never)
                             .autocorrectionDisabled()
                     } footer: {
-                        Text("Enter the password for the private key. Leave it blank if no password is required.")
+                        Text("请输入私钥密码。如果没有设置密码，请留空。")
                     }
                 }
-                .navigationTitle("Certificate Password")
+                .navigationTitle("证书密码")
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
-                    ToolbarItem(placement: .cancellationAction) { Button("Cancel") { pickedP12 = nil } }
+                    ToolbarItem(placement: .cancellationAction) { Button("取消") { pickedP12 = nil } }
                     ToolbarItem(placement: .confirmationAction) {
-                        Button("Import") {
+                        Button("导入") {
                             if let data = pickedP12 { certificate.importP12(data, password: p12Password) }
                             pickedP12 = nil
                         }
@@ -106,10 +106,10 @@ struct OnboardingView: View {
                     Button { go(back: true) } label: {
                         HStack(spacing: 4) {
                             Image(systemName: "chevron.left").font(.system(size: 16, weight: .semibold))
-                            Text("Back")
+                            Text("返回")
                         }
                     }
-                    .accessibilityLabel("Back")
+                    .accessibilityLabel("返回")
                 }
                 Spacer()
             }
@@ -128,7 +128,7 @@ struct OnboardingView: View {
             if step != .ask {
                 VStack(spacing: 14) {
                     dots
-                    Button(step == .tour && tourPage == Self.tour.count - 1 ? "Start Using Husk" : "Continue") { next() }
+                    Button(step == .tour && tourPage == Self.tour.count - 1 ? "开始使用 Husk" : "继续") { next() }
                         .buttonStyle(PrimaryButtonStyle())
                 }
                 .padding(.horizontal, 28)
@@ -180,8 +180,7 @@ struct OnboardingView: View {
         d.set(language, forKey: Onboarding.languageKey)
         // Husk's own screens and the apps in it use this language from the next launch (#156): iOS's per-app language, which the
         // runtime also reads for the apps' locale. Only when it differs from the phone's, so the phone's choice keeps applying otherwise.
-        if !(Locale.preferredLanguages.first ?? "en").hasPrefix(language) { d.set([language], forKey: "AppleLanguages") }
-        else { d.removeObject(forKey: "AppleLanguages") }
+        d.set(["zh-Hans"], forKey: "AppleLanguages")
         d.set(region, forKey: Onboarding.regionKey)
         d.set(timeZone, forKey: Onboarding.timeZoneKey)
         Onboarding.complete()
@@ -198,16 +197,16 @@ struct OnboardingView: View {
         switch step {
         case .welcome: welcome
         case .language:
-            picker(symbol: "globe", title: "Language",
-                   subtitle: "The language Husk and the apps and games in it use, from the next time Husk opens.",
+            picker(symbol: "globe", title: "语言",
+                   subtitle: "安卓应用和游戏所用的语言，将在下次启动时生效。本汉化版 Husk 界面固定为简体中文。",
                    rows: Self.languages, selection: $language)
         case .region:
-            picker(symbol: "map.fill", title: "Region",
-                   subtitle: "For apps that ask for your country.",
+            picker(symbol: "map.fill", title: "地区",
+                   subtitle: "用于需要获取你所在国家或地区的应用。",
                    rows: Self.regions, selection: $region)
         case .timeZone:
-            picker(symbol: "clock.fill", title: "Time Zone",
-                   subtitle: "For apps that show local times.",
+            picker(symbol: "clock.fill", title: "时区",
+                   subtitle: "用于显示本地时间的应用。",
                    rows: Self.timeZones, selection: $timeZone)
         case .options: options
         case .jit: jitPage
@@ -240,12 +239,12 @@ struct OnboardingView: View {
         VStack(spacing: 18) {
             Spacer()
             HuskMark(size: 110)
-            Text("Welcome to Husk")
+            Text("欢迎使用 Husk")
                 .font(.system(size: 34, weight: .bold))
-            Text("Android and PS4 games, on your iPhone.")
+            Text("安卓和 PS4 游戏，就在你的 iPhone 上。")
                 .font(.title3).foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
-            Text("A few quick choices first. Everything here can be changed later in Settings.")
+            Text("先做几个简单的选择。这里的所有设置以后都可以在“设置”中更改。")
                 .font(.callout).foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 36)
@@ -259,7 +258,7 @@ struct OnboardingView: View {
         let shown = rows.filter { matches(query, $0.name, $0.id) }
         return VStack(spacing: 16) {
             header(symbol, title, subtitle)
-            SearchField(text: $query, prompt: "Search")
+            SearchField(text: $query, prompt: "搜索")
                 .padding(.horizontal, 20)
             ScrollViewReader { proxy in
                 ScrollView {
@@ -295,16 +294,16 @@ struct OnboardingView: View {
     private var options: some View {
         ScrollView {
             VStack(spacing: 16) {
-                header("slider.horizontal.3", "Make It Yours", "All optional. You can change these any time in Settings.")
+                header("slider.horizontal.3", "个性化设置", "所有选项均为可选，可随时在设置中更改。")
 
                 VStack(alignment: .leading, spacing: 12) {
-                    Text("Appearance").font(.headline)
-                    Picker("Appearance", selection: $appearance) {
+                    Text("外观").font(.headline)
+                    Picker("外观", selection: $appearance) {
                         ForEach(Theme.Appearance.allCases) { Text($0.title).tag($0) }
                     }
                     .pickerStyle(.segmented)
                     .onChange(of: appearance) { Theme.apply($0) }
-                    Text("Accent Colour").font(.headline).padding(.top, 4)
+                    Text("强调色").font(.headline).padding(.top, 4)
                     LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 5), spacing: 12) {
                         ForEach(AppTheme.presets) { preset in
                             let selected = preset.color.themeHex == theme.accentColor.themeHex
@@ -321,18 +320,17 @@ struct OnboardingView: View {
                 .padding(16)
                 .huskCard()
 
-                choice(icon: "bolt.fill", title: "Start Android When Husk Opens",
-                       detail: "Off by default. The full Android emulator is experimental: starting it on launch can cause unwanted "
-                             + "bugs, freezes and crashes, and slows every launch. Games and apps don't need it.",
+                choice(icon: "bolt.fill", title: "打开 Husk 时启动安卓",
+                       detail: "默认关闭。完整安卓模拟器仍处于实验阶段，随应用启动可能带来异常、冻结或崩溃，并拖慢启动速度。游戏和应用并不一定需要它。",
                        isOn: $autoStart, caution: true)
-                choice(icon: "rectangle.landscape.rotate", title: "Landscape Android Screen",
-                       detail: "For the Android emulator: games fill a landscape screen, portrait apps get letterboxed.",
+                choice(icon: "rectangle.landscape.rotate", title: "横向安卓屏幕",
+                       detail: "适用于安卓模拟器：游戏填满横屏界面，竖屏应用则显示黑边。",
                        isOn: $landscape)
-                choice(icon: "speaker.wave.2.fill", title: "Android Sound",
-                       detail: "Adds a sound device to the emulator. It can't be saved while this is on, so it boots from cold.",
+                choice(icon: "speaker.wave.2.fill", title: "安卓声音",
+                       detail: "为模拟器添加声卡。开启后无法保存运行状态，每次启动都需要冷启动。",
                        isOn: $sound)
-                choice(icon: "externaldrive.badge.checkmark", title: "Save Android Automatically",
-                       detail: "Saves the emulator once it settles, so later starts take seconds.",
+                choice(icon: "externaldrive.badge.checkmark", title: "自动保存安卓状态",
+                       detail: "安卓运行稳定后自动保存，使后续启动只需几秒钟。",
                        isOn: $autoSave)
             }
             .padding(.horizontal, 20)
@@ -360,12 +358,12 @@ struct OnboardingView: View {
 
     /// What the JIT page says is already in place, if anything.
     private var jitState: String? {
-        if JITBootstrap.ready { return "JIT is on." }
-        if jit.method == .stikDebug { return "Husk will use StikDebug." }
-        if jit.method == .trollStore { return "Husk will use TrollStore." }
+        if JITBootstrap.ready { return "JIT 已开启。" }
+        if jit.method == .stikDebug { return "Husk 将使用 StikDebug。" }
+        if jit.method == .trollStore { return "Husk 将使用 TrollStore。" }
         switch jit.pairingSource {
-        case .onDevice: return "Paired on this device."
-        case .imported: return "Pairing file imported."
+        case .onDevice: return "已在此设备上完成配对。"
+        case .imported: return "配对文件已导入。"
         case nil: return nil
         }
     }
@@ -373,13 +371,13 @@ struct OnboardingView: View {
     private var jitPage: some View {
         ScrollView {
             VStack(spacing: 18) {
-                header("bolt.fill", "How Games Run",
-                       "Most games need JIT, or Play without JIT with your sideload certificate.")
+                header("bolt.fill", "游戏如何运行",
+                       "多数游戏需要 JIT，或使用侧载证书进行无 JIT 游玩。")
                 if let state = jitState {
                     Label(state, systemImage: "checkmark.circle.fill")
                         .font(.callout.weight(.medium)).foregroundStyle(.green)
                 }
-                Button(jitState == nil ? "Set Up StikJIT Now" : "Change JIT Setup") { settingUpJIT = true }
+                Button(jitState == nil ? "立即设置 StikJIT" : "更改 JIT 设置") { settingUpJIT = true }
                     .font(.body.weight(.semibold))
                     .foregroundStyle(Theme.accent)
 
@@ -388,34 +386,34 @@ struct OnboardingView: View {
                         jitless = true
                     } label: {
                         HStack {
-                            Text("Play without JIT")
+                            Text("无 JIT 游玩")
                                 .font(.body.weight(.semibold))
                             Spacer()
                             if jitless { Image(systemName: "checkmark").foregroundStyle(Theme.accent) }
                         }
                     }
                     .foregroundStyle(Theme.accent)
-                    Text("Import the certificate SideStore or AltStore installed Husk with, or a .p12.")
+                    Text("导入 SideStore 或 AltStore 安装 Husk 时使用的证书，或导入 .p12 文件。")
                         .font(.caption).foregroundStyle(.secondary)
                     if let info = certificate.info {
-                        Text("Certificate: team \(info.teamID).")
+                        Text("证书：团队 \(info.teamID)。")
                             .font(.caption).foregroundStyle(.green)
                     }
                     ForEach(SigningCertificate.Store.allCases) { store in
-                        Button("Import from \(store.title)") {
+                        Button("从 \(store.title) 导入") {
                             jitless = true
                             certificate.requestFromStore(store)
                         }
                         .font(.body.weight(.semibold))
                         .foregroundStyle(Theme.accent)
                     }
-                    Button("Import .p12 File") {
+                    Button("导入 .p12 文件") {
                         jitless = true
                         HuskFilePicker.present(types: [.pkcs12, .data], multiple: false, asCopy: true, onPick: { urls in
                             guard let url = urls.first else { return }
                             let scoped = url.startAccessingSecurityScopedResource()
                             defer { if scoped { url.stopAccessingSecurityScopedResource() } }
-                            guard let data = try? Data(contentsOf: url) else { certificate.lastError = "That file could not be read."; return }
+                            guard let data = try? Data(contentsOf: url) else { certificate.lastError = "无法读取该文件。"; return }
                             p12Password = ""
                             pickedP12 = data
                         }, onFail: { certificate.lastError = $0 })
@@ -428,7 +426,7 @@ struct OnboardingView: View {
                 }
                 .padding(.horizontal, 28)
 
-                Text("You can skip this: Husk asks again when a game needs it. JIT is in Settings › JIT & Sideload, Play without JIT is next to it.")
+                Text("可以跳过：游戏需要时 Husk 会再次询问。JIT 位于“设置 › JIT 与侧载”中，“无 JIT 游玩”就在其旁边。")
                     .font(.footnote).foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 36)
@@ -440,16 +438,16 @@ struct OnboardingView: View {
     private var ask: some View {
         VStack(spacing: 18) {
             Spacer()
-            header("map.circle.fill", "Would you like a walkthrough?", "A quick look at how Husk works: where your games are, how to add more, and where the settings live.")
+            header("map.circle.fill", "需要快速入门介绍吗？", "快速了解 Husk：游戏在哪里、如何添加，以及设置入口。")
             Spacer()
             VStack(spacing: 12) {
-                Button("Show Me Around") {
+                Button("带我看看") {
                     forward = true
                     tourPage = 0
                     withAnimation(.snappy) { step = .tour }
                 }
                 .buttonStyle(PrimaryButtonStyle())
-                Button("Not Now") { finish() }
+                Button("以后再说") { finish() }
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundStyle(Theme.accent)
                     .frame(maxWidth: .infinity, minHeight: 44)
@@ -462,22 +460,18 @@ struct OnboardingView: View {
     private struct TourCard { let symbol: String; let title: String; let text: String }
 
     private static let tour: [TourCard] = [
-        TourCard(symbol: "house.fill", title: "Home",
-                 text: "Your games on a shelf, the last one played first. Tap a game to pick it and its artwork fills the screen; tap it "
-                     + "again, or press Play, to start it. The ⋯ button has its settings and more."),
-        TourCard(symbol: "square.grid.2x2.fill", title: "Library",
-                 text: "Everything you have added, by platform. Use All, Android and PS4 to filter, search by name, and long-press any "
-                     + "game for its options. The dot shows how it runs: green plays, orange opens, red is broken."),
-        TourCard(symbol: "plus.circle.fill", title: "Adding Games",
-                 text: "Tap + to add an Android APK or bundle (.xapk, .apkm, .apks), or a PS4 game: a fake package (.pkg), a folder of "
-                     + "them, or an extracted game folder. You can also share files to Husk from Files or Safari."),
-        TourCard(symbol: "cart.fill", title: "Store",
-                 text: "Browse and download Android apps from Google Play, with a guest account or your own, and see how each runs in Husk."),
-        TourCard(symbol: "bolt.fill", title: "Settings & JIT",
-                 text: "Games need JIT, or Play without JIT with a certificate. Both are in Settings. Settings also has performance, appearance, "
-                     + "input, and the optional full Android emulator."),
-        TourCard(symbol: "questionmark.circle.fill", title: "Help",
-                 text: "Stuck? Settings › Help answers the common problems, and a game that crashes Husk leaves a report to share."),
+        TourCard(symbol: "house.fill", title: "主页",
+                 text: "游戏按最近游玩的顺序陈列。点击游戏可选中并显示背景，再次点击或按“游玩”即可启动。⋯ 按钮提供设置等更多选项。"),
+        TourCard(symbol: "square.grid.2x2.fill", title: "游戏库",
+                 text: "按平台展示已添加的内容。可用“全部”“安卓”和“PS4”筛选，按名称搜索，长按游戏查看选项。圆点表示运行情况：绿色可玩、橙色可打开、红色无法运行。"),
+        TourCard(symbol: "plus.circle.fill", title: "添加游戏",
+                 text: "点击 + 添加安卓 APK、应用包（.xapk、.apkm、.apks）或 PS4 游戏：fake package（.pkg）、包含安装包的文件夹或已解压的游戏文件夹。也可以从“文件”或 Safari 分享到 Husk。"),
+        TourCard(symbol: "cart.fill", title: "商店",
+                 text: "使用访客或自己的账号浏览并下载 Google Play 中的安卓应用，还可查看各应用在 Husk 中的运行情况。"),
+        TourCard(symbol: "bolt.fill", title: "设置与 JIT",
+                 text: "游戏需要 JIT，或使用证书进行无 JIT 游玩，两者均可在设置中配置。设置还包含性能、外观、输入及可选的完整安卓模拟器。"),
+        TourCard(symbol: "questionmark.circle.fill", title: "帮助",
+                 text: "遇到问题？“设置 › 帮助”提供常见问题解答。导致 Husk 崩溃的游戏还会留下可分享的报告。"),
     ]
 
     private func tourCard(_ card: TourCard) -> some View {

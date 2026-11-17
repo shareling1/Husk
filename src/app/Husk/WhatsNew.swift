@@ -15,16 +15,16 @@ enum WhatsNew {
     /// The version whose notes these are. A build of the same version shows nothing again.
     static let version = "3.4"
     static let items: [Item] = [
-        Item(symbol: "shippingbox.fill", title: "More Android apps",
-             detail: "Microsoft Word, Slack, Gmail, Teams, Deezer, Flipboard and Picsart get past the crashes that stopped them. React Native's new architecture and Qt 6 start, and libGDX and other OpenGL apps draw again."),
-        Item(symbol: "paintbrush.fill", title: "Looks better",
-             detail: "Rounded buttons are proper pills, and toolbars, window backgrounds and more color formats behave as they do on a phone."),
-        Item(symbol: "memorychip", title: "Less \"out of memory\"",
-             detail: "Fewer thread and address space crashes on sideloaded installs, and Unity games keep their frame rate up. Settings > Performance shows whether Increased Memory Limit and Extended Address Space are on."),
-        Item(symbol: "globe", title: "Japanese",
-             detail: "Husk is now in Japanese too, thanks to Yuki-1018."),
-        Item(symbol: "wrench.and.screwdriver.fill", title: "Fixes",
-             detail: "Importing a .p12, or launching with one saved, no longer crashes on iOS 27. Remove and Uninstall open next to their buttons on iPad, and Winlator's Settings no longer crashes."),
+        Item(symbol: "shippingbox.fill", title: "更多安卓应用",
+             detail: "Microsoft Word、Slack、Gmail、Teams、Deezer、Flipboard 和 Picsart 已解决此前阻止运行的崩溃问题。支持 React Native 新架构与 Qt 6 启动，libGDX 及其他 OpenGL 应用也可再次绘制画面。"),
+        Item(symbol: "paintbrush.fill", title: "更好的界面效果",
+             detail: "圆角按钮呈现正确的胶囊形状，工具栏、窗口背景与更多颜色格式的表现更接近真实安卓设备。"),
+        Item(symbol: "memorychip", title: "减少内存不足问题",
+             detail: "减少侧载安装时的线程与地址空间崩溃，并改善 Unity 游戏帧率。可在“设置 › 性能”中检查“提高内存限制”和“扩展地址空间”是否开启。"),
+        Item(symbol: "globe", title: "日语支持",
+             detail: "感谢 Yuki-1018，Husk 现已支持日语。"),
+        Item(symbol: "wrench.and.screwdriver.fill", title: "问题修复",
+             detail: "修复 iOS 27 上导入 .p12 或使用已保存证书启动时的崩溃；在 iPad 上，“移除”和“卸载”提示会出现在对应按钮旁；Winlator 的设置不再导致崩溃。"),
     ]
 
     private static let seenKey = "husk.whatsNew.seen"
@@ -48,7 +48,7 @@ struct WhatsNewSheet: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 26) {
                     VStack(alignment: .leading, spacing: 6) {
-                        Text("What's New in Husk \(WhatsNew.version)").font(.largeTitle.weight(.bold))
+                        Text("Husk \(WhatsNew.version) 的新功能").font(.largeTitle.weight(.bold))
                     }
                     .padding(.top, 36)
                     ForEach(WhatsNew.items) { item in
@@ -69,7 +69,7 @@ struct WhatsNewSheet: View {
                 .padding(.bottom, 20)
             }
             Button(action: done) {
-                Text("Continue").font(.headline).frame(maxWidth: .infinity).padding(.vertical, 8)
+                Text("继续").font(.headline).frame(maxWidth: .infinity).padding(.vertical, 8)
             }
             .buttonStyle(.borderedProminent)
             .padding(.horizontal, 28)

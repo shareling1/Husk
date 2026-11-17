@@ -173,7 +173,7 @@ private struct AppWindow: View {
                                 Text(model.statusText).font(.subheadline.weight(.semibold)).foregroundStyle(.white)
                             } else {
                                 ProgressView().tint(.white)
-                                Text("Starting \(app.label)…").font(.caption).foregroundStyle(.white.opacity(0.7))
+                                Text("正在启动 \(app.label)…").font(.caption).foregroundStyle(.white.opacity(0.7))
                             }
                         }
                         .allowsHitTesting(false)
@@ -255,7 +255,7 @@ private struct AppWindow: View {
                     }
                     .onEnded { _ in startFrame = nil }
             )
-            .accessibilityLabel("Resize")
+            .accessibilityLabel("调整大小")
     }
 }
 
@@ -294,11 +294,11 @@ private struct WindowDock: View {
                     }
             )
             .contextMenu {
-                Button { windows.restore() } label: { Label("Show", systemImage: "macwindow") }
-                Button(role: .destructive) { windows.close() } label: { Label("Close", systemImage: "xmark") }
+                Button { windows.restore() } label: { Label("显示", systemImage: "macwindow") }
+                Button(role: .destructive) { windows.close() } label: { Label("关闭", systemImage: "xmark") }
             }
-            .accessibilityLabel("\(app.label), minimised")
-            .accessibilityHint("Shows the window again")
+            .accessibilityLabel("\(app.label)（已最小化）")
+            .accessibilityHint("重新显示窗口")
     }
 }
 

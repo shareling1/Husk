@@ -25,7 +25,7 @@ final class CompatibilityStore: ObservableObject {
     @Published private(set) var maintenance = false
 
     static let maintenanceMessage =
-        "Our database is currently under maintenance. The app list will be unavailable, but all submitted reports and such will be added to the database once it\u{2019}s restored."
+        "数据库正在维护，暂时无法显示应用列表。维护结束后，所有已提交的报告等数据都会写入数据库。"
 
     /// Whether an answer is the site saying its database is down (rather than the site being unreachable).
     static func isMaintenance(_ http: HTTPURLResponse, _ data: Data) -> Bool {
@@ -69,10 +69,10 @@ final class CompatibilityStore: ObservableObject {
         case works, opens, broken, protected
         var label: String {
             switch self {
-            case .works: return "Works"
-            case .opens: return "Opens"
-            case .broken: return "Doesn\u{2019}t Work"
-            case .protected: return "Protected"
+            case .works: return "正常运行"
+            case .opens: return "可以打开"
+            case .broken: return "无法运行"
+            case .protected: return "受保护"
             }
         }
         var symbol: String {
@@ -93,10 +93,10 @@ final class CompatibilityStore: ObservableObject {
         }
         var explanation: String {
             switch self {
-            case .works: return "Runs and plays or works normally."
-            case .opens: return "Starts and shows its screens, but has not been fully tested or has problems."
-            case .broken: return "Crashes or closes while starting."
-            case .protected: return "Refuses to run outside a real Android phone (anti-cheat, anti-tamper or DRM). Husk does not get around that."
+            case .works: return "能够运行，游戏或应用功能正常。"
+            case .opens: return "能够启动并显示界面，但尚未全面测试，或仍有问题。"
+            case .broken: return "启动时崩溃或退出。"
+            case .protected: return "因反作弊、防篡改或 DRM 保护而拒绝在真实安卓手机以外的环境运行。Husk 不会绕过这些保护。"
             }
         }
     }
@@ -184,13 +184,13 @@ final class CompatibilityStore: ObservableObject {
     /// How this report ran: Play without JIT, or which debugger turned JIT on. The JIT-less list on the site is the
     /// team's own results; player reports all go to the same list, tagged with this.
     static var jitMethod: String {
-        if JITLess.enabled { return "None (Play without JIT)" }
+        if JITLess.enabled { return "无（免 JIT 运行）" }
         switch JITCoordinator.shared.resolvedMethod {
-        case .builtIn: return "StikJIT (built in)"
+        case .builtIn: return "StikJIT（内置）"
         case .stikDebug: return "StikDebug"
         case .trollStore: return "TrollStore"
-        case .jailbreak: return "Jailbreak"
-        case .automatic: return "Other"
+        case .jailbreak: return "越狱"
+        case .automatic: return "其他"
         }
     }
     static var build: String { (Bundle.main.infoDictionary?["CFBundleVersion"] as? String) ?? "" }
@@ -227,7 +227,7 @@ final class CompatibilityStore: ObservableObject {
         let answer = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
         guard (200..<300).contains(http.statusCode) else {
             let message = Self.isMaintenance(http, data) ? Self.maintenanceMessage : answer?["error"] as? String
-            throw NSError(domain: "Compatibility", code: 1, userInfo: [NSLocalizedDescriptionKey: message ?? "The compatibility list could not be reached."])
+            throw NSError(domain: "兼容性", code: 1, userInfo: [NSLocalizedDescriptionKey: message ?? "无法连接兼容性列表。"])
         }
         markAsked(package)
         if answer?["queued"] as? Bool == true {
@@ -303,18 +303,18 @@ struct CompatibilitySection: View {
                 }
                 .padding(.vertical, 2)
                 if entry.community.reports > 0 {
-                    LabeledContent("Player Reports", value: "\(entry.community.reports)")
+                    LabeledContent("玩家报告", value: "\(entry.community.reports)")
                 }
             } else {
-                Text("Not on the list yet. Be the first to say how it runs.")
+                Text("尚未收录。来做第一个报告运行情况的人吧。")
                     .font(.footnote).foregroundStyle(.secondary)
             }
-            Button { reporting = subject } label: { Label("Report How It Ran", systemImage: "square.and.pencil") }
-            Link(destination: compat.pageURL(subject.package)) { Label("Open on itslevii.dev", systemImage: "safari") }
+            Button { reporting = subject } label: { Label("报告运行情况", systemImage: "square.and.pencil") }
+            Link(destination: compat.pageURL(subject.package)) { Label("在 itslevii.dev 上打开", systemImage: "safari") }
         } header: {
-            Text("Compatibility")
+            Text("兼容性")
         } footer: {
-            if entry?.official != nil { Text("Tested by the Husk team on an iPhone.") }
+            if entry?.official != nil { Text("由 Husk 团队在 iPhone 上测试。") }
         }
     }
 }
@@ -340,7 +340,7 @@ struct CompatReportSheet: View {
                     ForEach([CompatibilityStore.Status.works, .opens, .broken], id: \.self) { s in
                         Button { status = s } label: {
                             HStack {
-                                Label(s == .opens ? "Opens, but Has Problems" : s.label, systemImage: s.symbol)
+                                Label(s == .opens ? "可以打开，但存在问题" : s.label, systemImage: s.symbol)
                                     .foregroundStyle(.primary)
                                 Spacer()
                                 if status == s { Image(systemName: "checkmark").foregroundStyle(.tint) }
@@ -348,29 +348,29 @@ struct CompatReportSheet: View {
                         }
                     }
                 } header: {
-                    Text(subject.afterPlaying ? "How did \(subject.name) run?" : "How does \(subject.name) run?")
+                    Text(subject.afterPlaying ? "\(subject.name) 运行得怎么样？" : "\(subject.name) 运行得怎么样？")
                 }
-                Section("Notes") {
+                Section("备注") {
                     if #available(iOS 16, *) {
-                        TextField("What worked, what didn\u{2019}t, how far you got", text: $notes, axis: .vertical)
+                        TextField("哪些功能正常、哪些异常，以及运行到了哪一步", text: $notes, axis: .vertical)
                             .lineLimit(3...8)
                     } else {
                         TextEditor(text: $notes).frame(minHeight: 80)
                     }
                 }
                 Section {
-                    TextField("Anonymous", text: $author)
+                    TextField("匿名", text: $author)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
                 } header: {
-                    Text("Your Name")
+                    Text("你的名字")
                 } footer: {
-                    Text("Sent with it: \(CompatibilityStore.device), iOS \(UIDevice.current.systemVersion), Husk build \(CompatibilityStore.build), \(JITLess.enabled ? "Play without JIT" : "JIT from \(CompatibilityStore.jitMethod)"). It shows on itslevii.dev for everyone.")
+                    Text("同时提交：\(CompatibilityStore.device)、iOS \(UIDevice.current.systemVersion)、Husk 构建 \(CompatibilityStore.build)、\(JITLess.enabled ? "Play without JIT" : "JIT from \(CompatibilityStore.jitMethod)")。这些信息会在 itslevii.dev 上公开显示。")
                 }
                 Section {
-                    Toggle("Attach my log", isOn: $attachLog)
+                    Toggle("附上我的日志", isOn: $attachLog)
                 } footer: {
-                    Text("Your Husk log helps the developer see what went wrong. Only moderators can read it.")
+                    Text("你的 Husk 日志能帮助开发者找到问题。只有管理员可以查看。")
                 }
                 if let error {
                     Section { Text(error).foregroundStyle(.red) }
@@ -379,21 +379,21 @@ struct CompatReportSheet: View {
                     Section {
                         Label { Text(queued).fixedSize(horizontal: false, vertical: true) }
                             icon: { Image(systemName: "checkmark.circle.fill").foregroundStyle(.green) }
-                    } header: { Text("Report Saved") }
+                    } header: { Text("报告已保存") }
                 }
             }
-            .navigationTitle(sent ? "Thanks!" : "Report")
+            .navigationTitle(sent ? "谢谢！" : "报告")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button(subject.afterPlaying ? "Not Now" : "Cancel") {
+                    Button(subject.afterPlaying ? "以后再说" : "取消") {
                         if subject.afterPlaying { CompatibilityStore.shared.markAsked(subject.package) }
                         dismiss()
                     }
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     if sending { ProgressView() } else {
-                        Button("Send") { send() }.disabled(status == nil)
+                        Button("发送") { send() }.disabled(status == nil)
                     }
                 }
             }

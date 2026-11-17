@@ -18,18 +18,18 @@ struct ProfileView: View {
             }
             .background(Console.page.ignoresSafeArea())
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Done") { dismiss() } }
+                ToolbarItem(placement: .cancellationAction) { Button("完成") { dismiss() } }
                 if account.signedIn {
                     ToolbarItem(placement: .primaryAction) {
                         Menu {
-                            Button { editing = true } label: { Label("Edit Profile", systemImage: "pencil") }
+                            Button { editing = true } label: { Label("编辑资料", systemImage: "pencil") }
                             if let u = account.user {
                                 HuskShareLink(item: CompatibilityStore.site.appendingPathComponent("u").appendingPathComponent(u.username)) {
-                                    Label("Share Profile", systemImage: "square.and.arrow.up")
+                                    Label("分享资料", systemImage: "square.and.arrow.up")
                                 }
                             }
                             Button(role: .destructive) { Task { await account.signOut() } } label: {
-                                Label("Sign Out", systemImage: "rectangle.portrait.and.arrow.right")
+                                Label("退出登录", systemImage: "rectangle.portrait.and.arrow.right")
                             }
                         } label: { Image(systemName: "ellipsis.circle") }
                     }
@@ -51,14 +51,14 @@ struct ProfileView: View {
                 .padding(.top, 8)
 
                 HStack {
-                    stat("\(u.stats.games)", "Games")
-                    stat("\(u.stats.apps)", "Apps")
-                    stat(Playtime.text(u.stats.playtimeSeconds), "Total Playtime")
+                    stat("\(u.stats.games)", "游戏")
+                    stat("\(u.stats.apps)", "应用")
+                    stat(Playtime.text(u.stats.playtimeSeconds), "总游玩时长")
                 }
 
                 if !u.recent.isEmpty {
                     VStack(alignment: .leading, spacing: 12) {
-                        Text("Recently Played").font(.system(size: 18, weight: .bold)).foregroundStyle(Console.text)
+                        Text("最近玩过").font(.system(size: 18, weight: .bold)).foregroundStyle(Console.text)
                         ScrollView(.horizontal, showsIndicators: false) {
                             HStack(alignment: .top, spacing: 12) {
                                 ForEach(u.recent) { p in recentTile(p) }
@@ -68,7 +68,7 @@ struct ProfileView: View {
                 }
 
                 VStack(alignment: .leading, spacing: 12) {
-                    Text("Achievements").font(.system(size: 18, weight: .bold)).foregroundStyle(Console.text)
+                    Text("成就").font(.system(size: 18, weight: .bold)).foregroundStyle(Console.text)
                     ForEach(u.achievements) { a in
                         HStack(spacing: 14) {
                             Image(systemName: a.unlocked ? "trophy.fill" : "lock.fill")
@@ -134,25 +134,25 @@ struct SignInView: View {
         ScrollView {
             VStack(spacing: 18) {
                 HuskMark(size: 72).padding(.top, 24)
-                Text(creating ? "Create a Husk Account" : "Sign In to Husk")
+                Text(creating ? "创建 Husk 账户" : "登录 Husk")
                     .font(.system(size: 26, weight: .bold)).foregroundStyle(Console.text)
-                Text("Your profile, playtime and achievements, on this iPhone and on itslevii.dev.")
+                Text("你的资料、游戏时长和成就，在这台 iPhone 和 itslevii.dev 上都能看到。")
                     .font(.subheadline).foregroundStyle(Console.textDim).multilineTextAlignment(.center)
                 VStack(spacing: 10) {
-                    field("Username", text: $username)
-                    if creating { field("Display name", text: $displayName) }
-                    SecureField("Password", text: $password)
+                    field("用户名", text: $username)
+                    if creating { field("显示名称", text: $displayName) }
+                    SecureField("密码", text: $password)
                         .textContentType(creating ? .newPassword : .password)
                         .padding(.horizontal, 14).frame(height: 48)
                         .background(Console.card, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
                 }
                 if let error { Text(error).font(.footnote).foregroundStyle(.orange).multilineTextAlignment(.center) }
                 Button { Task { await submit() } } label: {
-                    if account.busy { ProgressView().tint(.white) } else { Text(creating ? "Create Account" : "Sign In") }
+                    if account.busy { ProgressView().tint(.white) } else { Text(creating ? "创建账户" : "登录") }
                 }
                 .buttonStyle(ConsolePlayButtonStyle())
                 .disabled(account.busy || username.count < 3 || password.count < (creating ? 8 : 1))
-                Button(creating ? "I already have an account" : "Create an account") {
+                Button(creating ? "我已有账户" : "创建账户") {
                     withAnimation { creating.toggle(); error = nil }
                 }
                 .font(.system(size: 15, weight: .semibold))
@@ -216,18 +216,18 @@ struct EditProfileView: View {
                     }
                     .listRowBackground(Color.clear)
                 }
-                Section("Display Name") { TextField("Name", text: $name) }
+                Section("显示名称") { TextField("名称", text: $name) }
                 if account.avatar != nil {
-                    Section { Button("Remove Picture", role: .destructive) { Task { try? await account.update(avatarPNG: .some(nil)) } } }
+                    Section { Button("移除头像", role: .destructive) { Task { try? await account.update(avatarPNG: .some(nil)) } } }
                 }
                 if let error { Section { Text(error).foregroundStyle(.orange) } }
             }
-            .navigationTitle("Edit Profile")
+            .navigationTitle("编辑资料")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+                ToolbarItem(placement: .cancellationAction) { Button("取消") { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") {
+                    Button("保存") {
                         Task {
                             do {
                                 let png = picked.flatMap(Account.avatarPNG)

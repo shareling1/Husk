@@ -88,11 +88,11 @@ final class IncomingFiles: ObservableObject {
     /// it. Only fake packages (fPKG) and homebrew open; a retail package is refused with a message saying so.
     private func installPS4Packages(_ files: [URL]) {
         guard PS4Store.available, let module = PS4Store.moduleURL else {
-            AndroidHost.shared.say("Can't install PS4 games here", PS4Store.moduleURL == nil ? "This copy of Husk doesn't have the PS4 layer." : "PS4 games need iOS 17.4 or later.", good: false)
+            AndroidHost.shared.say("无法在此安装 PS4 游戏", PS4Store.moduleURL == nil ? "此版本的 Husk 不包含 PS4 转译层。" : "PS4 游戏需要 iOS 17.4 或更高版本。", good: false)
             return
         }
         let progress = PackageProgress { [weak self] text in self?.preparing = text }
-        preparing = "Installing \(files[0].lastPathComponent)…"
+        preparing = "正在安装 \(files[0].lastPathComponent)…"
         Task.detached(priority: .userInitiated) {
             let fm = FileManager.default
             try? fm.createDirectory(at: PS4Store.root, withIntermediateDirectories: true)
@@ -101,12 +101,12 @@ final class IncomingFiles: ObservableObject {
                 let scoped = url.startAccessingSecurityScopedResource()
                 defer { if scoped { url.stopAccessingSecurityScopedResource() } }
                 let name = url.deletingPathExtension().lastPathComponent
-                progress.begin(files.count == 1 ? "Installing \(name)" : "Installing \(name) (\(i + 1) of \(files.count))")
+                progress.begin(files.count == 1 ? "正在安装 \(name)" : "正在安装 \(name)（\(i + 1) / \(files.count)）")
                 // Unpacked, a game takes at least its package's size.
                 let size = (try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize).map(Int64.init) ?? 0
                 if let free = try? PS4Store.root.resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey]).volumeAvailableCapacityForImportantUsage,
                    free < size {
-                    failed.append((name, "needs \(ByteCountFormatter.string(fromByteCount: size, countStyle: .file)) free"))
+                    failed.append((name, "需要 \(ByteCountFormatter.string(fromByteCount: size, countStyle: .file)) 可用空间"))
                     continue
                 }
                 // Into a hidden folder on the same volume, so the library never lists a half-installed game.
@@ -131,12 +131,12 @@ final class IncomingFiles: ObservableObject {
                 if isUpdate { try? fm.removeItem(at: dest) }
                 guard !fm.fileExists(atPath: dest.path) else {
                     try? fm.removeItem(at: temp)
-                    failed.append((sfo?.title ?? name, "is already installed"))
+                    failed.append((sfo?.title ?? name, "已经安装"))
                     continue
                 }
                 do {
                     try fm.moveItem(at: temp, to: dest)
-                    installed.append(isUpdate ? "\(sfo?.title ?? titleID) update" : sfo?.title ?? titleID)
+                    installed.append(isUpdate ? "\(sfo?.title ?? titleID) 更新" : sfo?.title ?? titleID)
                     HuskLog.log("ps4", "installed \(url.lastPathComponent) as \(dest.lastPathComponent)")
                 } catch {
                     try? fm.removeItem(at: temp)
@@ -148,9 +148,9 @@ final class IncomingFiles: ObservableObject {
                 PS4Store.shared.reload()
                 if let first = failed.first {
                     let (what, why) = first
-                    AndroidHost.shared.say("Could not install \(what)", why.prefix(1).uppercased() + why.dropFirst() + (failed.count > 1 ? " (and \(failed.count - 1) more)" : ""), good: false)
+                    AndroidHost.shared.say("无法安装 \(what)", why.prefix(1).uppercased() + why.dropFirst() + (failed.count > 1 ? "（另有 \(failed.count - 1) 项）" : ""), good: false)
                 } else if !installed.isEmpty {
-                    AndroidHost.shared.say(installed.count == 1 ? "Installed \(installed[0])" : "Installed \(installed.count) PS4 packages", "It's in your library.")
+                    AndroidHost.shared.say(installed.count == 1 ? "已安装 \(installed[0])" : "已安装 \(installed.count) 个 PS4 安装包", "已添加到你的游戏库。")
                 }
             }
         }
@@ -158,7 +158,7 @@ final class IncomingFiles: ObservableObject {
 
     /// Copies PS4 game folders into Documents/PS4 Games (off the main thread: they are gigabytes) and shows them in the library.
     private func importPS4(_ folders: [URL]) {
-        preparing = folders.count == 1 ? "Importing \(folders[0].lastPathComponent)…" : "Importing \(folders.count) PS4 games…"
+        preparing = folders.count == 1 ? "正在导入 \(folders[0].lastPathComponent)…" : "正在导入 \(folders.count) 个 PS4 游戏…"
         Task.detached(priority: .userInitiated) {
             let fm = FileManager.default
             try? fm.createDirectory(at: PS4Store.root, withIntermediateDirectories: true)
@@ -187,7 +187,7 @@ final class IncomingFiles: ObservableObject {
 
     /// Copy files to Husk's own folder, off the main thread -- a game can be gigabytes -- then hand back the copies.
     private func take(_ urls: [URL], then: @escaping @MainActor ([URL]) -> Void) {
-        preparing = urls.count == 1 ? "Preparing \(urls[0].lastPathComponent)…" : "Preparing \(urls.count) files…"
+        preparing = urls.count == 1 ? "正在准备 \(urls[0].lastPathComponent)…" : "正在准备 \(urls.count) 个文件…"
         Task.detached(priority: .userInitiated) {
             var copies: [URL] = []
             for url in urls {
@@ -255,26 +255,26 @@ struct IncomingChooser: View {
 
     private var title: String {
         guard let first = incoming.waiting.first else { return "" }
-        return incoming.waiting.count == 1 ? first.lastPathComponent : "\(incoming.waiting.count) files"
+        return incoming.waiting.count == 1 ? first.lastPathComponent : "\(incoming.waiting.count) 个文件"
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
             VStack(alignment: .leading, spacing: 4) {
-                Text("Add to Husk").font(.title2.weight(.bold))
+                Text("添加到 Husk").font(.title2.weight(.bold))
                 Text(title).font(.subheadline).foregroundStyle(.secondary).lineLimit(2)
             }
 
-            choice(icon: "bolt.fill", title: "Translation Layer",
-                   detail: "Runs the game directly on your iPhone, without starting Android. Best for games.") {
+            choice(icon: "bolt.fill", title: "转译层",
+                   detail: "直接在 iPhone 上运行游戏，无需启动安卓，适合游戏使用。") {
                 incoming.sendToTranslationLayer()
             }
-            choice(icon: "apps.iphone", title: "Android",
+            choice(icon: "apps.iphone", title: "安卓",
                    detail: androidDetail) {
                 incoming.sendToAndroid()
             }
 
-            Button("Cancel", role: .cancel) { incoming.discard() }
+            Button("取消", role: .cancel) { incoming.discard() }
                 .frame(maxWidth: .infinity)
                 .padding(.top, 2)
         }
@@ -282,9 +282,9 @@ struct IncomingChooser: View {
     }
 
     private var androidDetail: String {
-        if host.isReady { return "Installs it into Android, where any app can run." }
-        if guest.state == .ready { return "Installs it into Android the next time Android starts." }
-        return "Installs it into Android once Android is downloaded and started."
+        if host.isReady { return "安装到安卓系统中运行。" }
+        if guest.state == .ready { return "下次启动安卓时安装。" }
+        return "下载并启动安卓后安装。"
     }
 
     private func choice(icon: String, title: String, detail: String, action: @escaping () -> Void) -> some View {

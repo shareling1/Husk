@@ -13,7 +13,7 @@ enum BundleUnpacker {
         case notAZip, unsupported(String)
         var errorDescription: String? {
             switch self {
-            case .notAZip: return "That file is not a bundle Husk can read."
+            case .notAZip: return "Husk 无法读取这个应用包。"
             case .unsupported(let why): return why
             }
         }
@@ -128,7 +128,7 @@ enum BundleUnpacker {
             let lower = base.lowercased()
             let isOBB = lower.hasSuffix(".obb")
             guard lower.hasSuffix(".apk") || isOBB, !name.hasSuffix("/"), !base.hasPrefix(".") else { continue }
-            guard method == 0 || method == 8 else { throw Failure.unsupported("\(base) is packed in a way (zip method \(method)) Husk cannot unpack.") }
+            guard method == 0 || method == 8 else { throw Failure.unsupported("\(base) 使用了 Husk 无法解包的压缩方式（ZIP 方法 \(method)）。") }
 
             // The local header has its own name and extra lengths; the data follows them.
             try file.seek(toOffset: localOffset)
@@ -159,11 +159,11 @@ enum BundleUnpacker {
             }
             try inflate?.finalize()
             if method == 8, let written = try? out.offset(), written != uncompressed {
-                throw Failure.unsupported("\(base) did not unpack whole (\(written) of \(uncompressed) bytes).")
+                throw Failure.unsupported("\(base) 未能完整解包（已解包 \(written) / \(uncompressed) 字节）。")
             }
             names.append(isOBB ? "obb/" + base : base)
         }
-        if !names.contains(where: { $0.lowercased().hasSuffix(".apk") }) { throw Failure.unsupported("There are no APKs in that bundle.") }
+        if !names.contains(where: { $0.lowercased().hasSuffix(".apk") }) { throw Failure.unsupported("这个应用包中没有 APK。") }
         return names
     }
 

@@ -174,11 +174,11 @@ final class WebAppRuntime: NSObject {
     }
 
     private static let capacitorPlugins: [String: [String]] = [
-        "App": ["getInfo", "getState", "getLaunchUrl", "exitApp", "minimizeApp", "toggleBackButtonHandler", "removeListener", "removeAllListeners"],
+        "应用": ["getInfo", "getState", "getLaunchUrl", "exitApp", "minimizeApp", "toggleBackButtonHandler", "removeListener", "removeAllListeners"],
         "Device": ["getId", "getInfo", "getBatteryInfo", "getLanguageCode", "getLanguageTag"],
         "StatusBar": ["setStyle", "setBackgroundColor", "show", "hide", "getInfo", "setOverlaysWebView"],
         "SplashScreen": ["show", "hide"],
-        "Keyboard": ["show", "hide", "setAccessoryBarVisible", "setScroll", "setStyle", "setResizeMode", "getResizeMode", "removeAllListeners"],
+        "键盘": ["show", "hide", "setAccessoryBarVisible", "setScroll", "setStyle", "setResizeMode", "getResizeMode", "removeAllListeners"],
         "Haptics": ["impact", "notification", "vibrate", "selectionStart", "selectionChanged", "selectionEnd"],
     ]
 
@@ -318,14 +318,14 @@ final class WebAppRuntime: NSObject {
             ok(["type": "loadstop"], keep: true)
         case ("Notification", "alert"):
             dialog(title: args[safe: 1] as? String, message: args[safe: 0] as? String ?? "",
-                   buttons: [(args[safe: 2] as? String) ?? "OK"]) { [weak self] _, _ in self?.cordovaResult(id, success: true, nil) }
+                   buttons: [(args[safe: 2] as? String) ?? "好"]) { [weak self] _, _ in self?.cordovaResult(id, success: true, nil) }
         case ("Notification", "confirm"):
-            let labels = (args[safe: 2] as? [String]) ?? ["OK", "Cancel"]
+            let labels = (args[safe: 2] as? [String]) ?? ["好", "取消"]
             dialog(title: args[safe: 1] as? String, message: args[safe: 0] as? String ?? "", buttons: labels) { [weak self] i, _ in
                 self?.cordovaResult(id, success: true, i + 1)
             }
         case ("Notification", "prompt"):
-            let labels = (args[safe: 2] as? [String]) ?? ["OK", "Cancel"]
+            let labels = (args[safe: 2] as? [String]) ?? ["好", "取消"]
             dialog(title: args[safe: 1] as? String, message: args[safe: 0] as? String ?? "", buttons: labels,
                    field: args[safe: 3] as? String ?? "") { [weak self] i, text in
                 self?.cordovaResult(id, success: true, ["buttonIndex": i + 1, "input1": text ?? ""])
@@ -361,7 +361,7 @@ final class WebAppRuntime: NSObject {
     func back() {
         switch kind {
         case .capacitor:
-            if capacitorEvent("App", "backButton", ["canGoBack": webView.canGoBack]) { return }
+            if capacitorEvent("应用", "backButton", ["canGoBack": webView.canGoBack]) { return }
         case .cordova:
             if cordovaOverridesBack, cordovaEvent("backbutton") { return }
         }
@@ -372,8 +372,8 @@ final class WebAppRuntime: NSObject {
     func setActive(_ active: Bool) {
         switch kind {
         case .capacitor:
-            capacitorEvent("App", "appStateChange", ["isActive": active])
-            capacitorEvent("App", active ? "resume" : "pause", [:])
+            capacitorEvent("应用", "appStateChange", ["isActive": active])
+            capacitorEvent("应用", active ? "resume" : "pause", [:])
         case .cordova:
             _ = cordovaEvent(active ? "resume" : "pause")
         }
@@ -493,7 +493,7 @@ extension WebAppRuntime: WKUIDelegate, WKNavigationDelegate {
                 completionHandler(answer)
                 return
             }
-            dialog(title: nil, message: prompt, buttons: ["OK", "Cancel"], field: defaultText ?? "") { i, text in
+            dialog(title: nil, message: prompt, buttons: ["好", "取消"], field: defaultText ?? "") { i, text in
                 completionHandler(i == 0 ? text : nil)
             }
         }
@@ -501,12 +501,12 @@ extension WebAppRuntime: WKUIDelegate, WKNavigationDelegate {
 
     func webView(_ webView: WKWebView, runJavaScriptAlertPanelWithMessage message: String,
                              initiatedByFrame frame: WKFrameInfo, completionHandler: @escaping () -> Void) {
-        MainActor.assumeIsolated { dialog(title: nil, message: message, buttons: ["OK"]) { _, _ in completionHandler() } }
+        MainActor.assumeIsolated { dialog(title: nil, message: message, buttons: ["好"]) { _, _ in completionHandler() } }
     }
 
     func webView(_ webView: WKWebView, runJavaScriptConfirmPanelWithMessage message: String,
                              initiatedByFrame frame: WKFrameInfo, completionHandler: @escaping (Bool) -> Void) {
-        MainActor.assumeIsolated { dialog(title: nil, message: message, buttons: ["OK", "Cancel"]) { i, _ in completionHandler(i == 0) } }
+        MainActor.assumeIsolated { dialog(title: nil, message: message, buttons: ["好", "取消"]) { i, _ in completionHandler(i == 0) } }
     }
 
     /// target=_blank and window.open: the link opens outside, as Android's WebView hands it to the browser.

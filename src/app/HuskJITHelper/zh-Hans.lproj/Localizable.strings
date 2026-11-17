@@ -1,0 +1,8 @@
+
+"Developer Disk Image cache reset." = "开发者磁盘映像缓存已重置。";
+"Husk detached cleanly from its built-in JIT helper." = "Husk 已正常断开与内置 JIT 助手的连接。";
+"Husk's JIT helper received no request." = "Husk 的 JIT 助手未收到请求。";
+"LocalDevVPN is reachable and the Developer Disk Image is ready." = "LocalDevVPN 可连接，开发者磁盘映像已就绪。";
+"StikJIT returned an unknown preparation state." = "StikJIT 返回了未知的准备状态。";
+"The pairing file was not provided." = "未提供配对文件。";
+"The target process or Husk's JIT script was not provided." = "未提供目标进程或 Husk 的 JIT 脚本。";

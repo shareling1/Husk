@@ -79,7 +79,7 @@ import UserNotifications
         guard Self.isSupported, !active, session == nil else { return }
         var error: UnsafeMutablePointer<CChar>?
         guard let session = husk_rppairing_new(Self.hostName, &error) else {
-            fail(Self.take(error) ?? "Husk could not open its pairing port.")
+            fail(Self.take(error) ?? "Husk 无法打开配对端口。")
             return
         }
         self.session = session
@@ -95,7 +95,7 @@ import UserNotifications
         beginBackground()
         deadline = Timer.scheduledTimer(withTimeInterval: Self.timeout, repeats: false) { _ in
             MainActor.assumeIsolated {
-                OnDevicePairing.shared.cancel(reason: "Pairing timed out. Try again when you are ready to pair from Settings.")
+                OnDevicePairing.shared.cancel(reason: "配对超时。准备好在系统设置中配对后，请重试。")
             }
         }
 
@@ -139,11 +139,11 @@ import UserNotifications
         phase = .pin(pin)
         log("code shown")
         if #available(iOS 26.0, *), let task = continued as? BGContinuedProcessingTask {
-            task.updateTitle("Pairing code \(pin)", subtitle: "Enter it on this \(Self.deviceKind) to pair with Husk")
+            task.updateTitle("配对码 \(pin)", subtitle: "在此 \(Self.deviceKind) 上输入验证码，与 Husk 配对")
             task.progress.completedUnitCount = 1
         }
         if UIApplication.shared.applicationState != .active {
-            notify("Husk pairing code: \(pin)", body: "Enter this code on your \(Self.deviceKind) to finish pairing.")
+            notify("Husk 配对验证码：\(pin)", body: "在 \(Self.deviceKind) 上输入此验证码以完成配对。")
         }
     }
 
@@ -158,19 +158,19 @@ import UserNotifications
             do {
                 guard let data else { throw NSError(domain: "HuskJIT", code: 20) }
                 try JITCoordinator.shared.storeOnDevicePairing(data)
-                phase = .paired(device: device ?? "this \(Self.deviceKind)")
+                phase = .paired(device: device ?? "此 \(Self.deviceKind)")
                 log("paired")
                 if UIApplication.shared.applicationState != .active {
-                    notify("Paired with Husk", body: "Return to Husk to finish setting up JIT.")
+                    notify("已与 Husk 配对", body: "请返回 Husk，完成 JIT 设置。")
                 }
                 endBackground(success: true)
             } catch {
-                fail("Pairing finished, but Husk could not save the pairing file.")
+                fail("配对已完成，但 Husk 无法保存配对文件。")
             }
         case 2:
             endBackground(success: false)
         default:
-            fail(message.map { "Pairing failed: \($0)" } ?? "Pairing failed. Try again.")
+            fail(message.map { "配对失败：\($0)" } ?? "配对失败，请重试。")
         }
     }
 
@@ -222,8 +222,8 @@ import UserNotifications
         guard active else { return }
         log("advertising failed error=\(error)")
         fail(error == DNSServiceErrorType(kDNSServiceErr_PolicyDenied)
-             ? "Husk needs Local Network access to pair. Allow it in Settings › Apps › Husk, then try again."
-             : "Husk could not announce itself on the local network. Check that Wi-Fi is on, then try again.")
+             ? "Husk 需要本地网络权限才能配对。请在“设置 › App › Husk”中允许访问，然后重试。"
+             : "Husk 无法在本地网络上广播。请确认已开启无线局域网，然后重试。")
     }
 
     private func stopAdvertising() {
@@ -241,12 +241,11 @@ import UserNotifications
     }
 
     private func beginBackground() {
-        grace = UIApplication.shared.beginBackgroundTask(withName: "Husk pairing") {
+        grace = UIApplication.shared.beginBackgroundTask(withName: "Husk 配对") {
             MainActor.assumeIsolated {
                 let pairing = OnDevicePairing.shared
                 if pairing.continued == nil && pairing.active {
-                    pairing.cancel(reason: "iOS stopped Husk in the background before pairing finished. "
-                                         + "Try again, and pair from Settings straight away.")
+                    pairing.cancel(reason: "配对完成前，iOS 停止了后台中的 Husk。请重试，并立即前往系统设置进行配对。")
                 }
                 pairing.endGrace()
             }
@@ -265,8 +264,8 @@ import UserNotifications
             guard ok else { log("register refused"); backgroundLimited = true; return }
             registered = identifier
         }
-        let request = BGContinuedProcessingTaskRequest(identifier: identifier, title: "Pairing with Husk",
-                                                       subtitle: "Settings › Privacy & Security › Developer Mode")
+        let request = BGContinuedProcessingTaskRequest(identifier: identifier, title: "正在与 Husk 配对",
+                                                       subtitle: "设置 › 隐私与安全性 › 开发者模式")
         request.strategy = .fail
         do {
             try BGTaskScheduler.shared.submit(request)
@@ -283,13 +282,13 @@ import UserNotifications
         continued = task
         task.progress.totalUnitCount = 2
         if case .pin(let pin) = phase {
-            task.updateTitle("Pairing code \(pin)", subtitle: "Enter it on this \(Self.deviceKind) to pair with Husk")
+            task.updateTitle("配对码 \(pin)", subtitle: "在此 \(Self.deviceKind) 上输入验证码，与 Husk 配对")
             task.progress.completedUnitCount = 1
         }
         task.expirationHandler = {
             DispatchQueue.main.async {
                 OnDevicePairing.shared.continued = nil
-                OnDevicePairing.shared.cancel(reason: "iOS stopped the pairing in the background. Try again.")
+                OnDevicePairing.shared.cancel(reason: "iOS 停止了后台配对，请重试。")
             }
         }
         log("continued-processing running")

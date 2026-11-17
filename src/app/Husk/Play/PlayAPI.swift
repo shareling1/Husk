@@ -48,7 +48,7 @@ enum PlayAPI {
     /// Obtains an anonymous guest token from Aurora's token dispenser server.
     static func fetchAuroraGuestSession(dispenserURL: String = defaultDispenserURL) async throws -> PlaySession {
         guard let url = URL(string: dispenserURL) else {
-            throw PlayError("Invalid dispenser URL: \(dispenserURL)")
+            throw PlayError("无效的令牌服务地址：\(dispenserURL)")
         }
         var req = URLRequest(url: url)
         req.httpMethod = "POST"
@@ -89,8 +89,8 @@ enum PlayAPI {
 
         // The dispenser is a free service of the Aurora Store project; when Google refuses its shared accounts it answers 5xx for
         // hours, so the message says what is down and that signing in still works
-        let unavailable = "The anonymous login service (Aurora's token dispenser) is not working right now"
-        let advice = "Sign in with a Google account instead, or try again later."
+        let unavailable = "匿名登录服务（Aurora 令牌服务）目前不可用"
+        let advice = "请改用 Google 账号登录，或稍后重试。"
         let data: Data, response: URLResponse
         do { (data, response) = try await urlSession.data(for: req) } catch { throw PlayError("\(unavailable) (\(error.localizedDescription)). \(advice)") }
         guard (response as? HTTPURLResponse)?.statusCode == 200 else {
@@ -108,7 +108,7 @@ enum PlayAPI {
 
         let decoded = try JSONDecoder().decode(DispenserResponse.self, from: data)
         guard let bearer = decoded.authToken ?? decoded.auth, !bearer.isEmpty else {
-            throw PlayError("Aurora token dispenser returned an empty auth token.")
+            throw PlayError("Aurora 令牌服务返回了空的认证令牌。")
         }
 
         let email = decoded.email ?? "anonymous@auroraoss.com"
@@ -171,7 +171,7 @@ enum PlayAPI {
         let (data, response) = try await urlSession.data(for: req)
         let kv = parseKeyValues(data)
         guard (response as? HTTPURLResponse)?.statusCode == 200, let token = kv["Token"], !token.isEmpty else {
-            throw PlayError("Google did not accept the sign-in (\(kv["Error"] ?? "HTTP \((response as? HTTPURLResponse)?.statusCode ?? 0)")).")
+            throw PlayError("Google 拒绝了登录（\(kv["Error"] ?? "HTTP \((response as? HTTPURLResponse)?.statusCode ?? 0)")）。")
         }
         return token
     }
@@ -207,7 +207,7 @@ enum PlayAPI {
         let (data, response) = try await urlSession.data(for: req)
         let kv = parseKeyValues(data)
         guard (response as? HTTPURLResponse)?.statusCode == 200, let token = kv["Auth"], !token.isEmpty else {
-            throw PlayError("Google Play would not open a session (\(kv["Error"] ?? "HTTP \((response as? HTTPURLResponse)?.statusCode ?? 0)")).")
+            throw PlayError("Google Play 无法建立会话（\(kv["Error"] ?? "HTTP \((response as? HTTPURLResponse)?.statusCode ?? 0)")）。")
         }
         return token
     }
@@ -224,10 +224,10 @@ enum PlayAPI {
         req.httpBody = PlayDevice.checkinRequest()
         let (data, response) = try await urlSession.data(for: req)
         guard (response as? HTTPURLResponse)?.statusCode == 200 else {
-            throw PlayError("Google did not register the device (HTTP \((response as? HTTPURLResponse)?.statusCode ?? 0)).")
+            throw PlayError("Google 未注册此设备（HTTP \((response as? HTTPURLResponse)?.statusCode ?? 0)）。")
         }
         let reply = ProtoMessage(data)
-        guard let id = reply.uint64(7), id != 0 else { throw PlayError("Google registered the device but gave it no id.") }
+        guard let id = reply.uint64(7), id != 0 else { throw PlayError("Google 注册了设备，但未返回设备 ID。") }
         return (String(id, radix: 16), reply.string(12) ?? "")
     }
 
@@ -277,10 +277,10 @@ enum PlayAPI {
         let (data, response) = try await urlSession.data(for: req)
         let status = (response as? HTTPURLResponse)?.statusCode ?? 0
         let wrapper = ProtoMessage(data)
-        if status == 401 { throw PlayError("Google Play's session has ended; signing in again.") }
+        if status == 401 { throw PlayError("Google Play 会话已结束，正在重新登录。") }
         guard status == 200 else {
             let message = wrapper.message(5)?.string(1) ?? "HTTP \(status)"    // ServerCommands.displayErrorMessage
-            throw PlayError("Google Play said no: \(message)")
+            throw PlayError("Google Play 拒绝了请求：\(message)")
         }
         if let payload = wrapper.message(1), !payload.fields.isEmpty { return payload }
         return wrapper.message(3)?.message(2)?.message(1) ?? ProtoMessage(Data())
@@ -376,7 +376,7 @@ enum PlayAPI {
             }
 
             // Offer / Price: field 8
-            var price = "Free"
+            var price = "免费"
             var isFree = true
             if let offer = doc.messages(8).first {
                 if let p = offer.string(7), !p.isEmpty {
@@ -755,13 +755,13 @@ enum PlayAPI {
         let delivResp = payload.message(21)
         let status = delivResp?.int(1) ?? 1
         if status == 2 {
-            throw PlayError("Google Play reported app is incompatible with this device profile (status 2).")
+            throw PlayError("Google Play 提示此应用与当前设备配置不兼容（状态 2）。")
         } else if status == 3 {
-            throw PlayError("App requires purchase or license before download.")
+            throw PlayError("下载前需要购买此应用或获得许可。")
         }
 
         guard let deliveryDataMsg = delivResp?.message(2) else {
-            throw PlayError("Google Play did not return download information.")
+            throw PlayError("Google Play 未返回下载信息。")
         }
 
         if ProcessInfo.processInfo.environment["HUSK_PLAY_DUMP"] != nil {
@@ -845,7 +845,7 @@ enum PlayAPI {
         }
 
         guard !downloadsToMake.isEmpty else {
-            throw PlayError("No download URLs available for \(packageName).")
+            throw PlayError("没有可用于 \(packageName) 的下载地址。")
         }
 
         let totalExpectedBytes = downloadsToMake.reduce(Int64(0)) { $0 + max(0, $1.size) }
@@ -869,7 +869,7 @@ enum PlayAPI {
             let status = try await FileStreamer.download(req, to: fileDest)
             guard status == 200 else {
                 try? FileManager.default.removeItem(at: fileDest)
-                throw PlayError("Failed to download \(item.name) (HTTP \(status))")
+                throw PlayError("下载 \(item.name) 失败（HTTP \(status)）")
             }
             downloadedFiles.append(fileDest)
 
