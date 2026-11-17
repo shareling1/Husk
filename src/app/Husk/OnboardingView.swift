@@ -198,7 +198,7 @@ struct OnboardingView: View {
         case .welcome: welcome
         case .language:
             picker(symbol: "globe", title: "语言",
-                   subtitle: "安卓应用和游戏所用的语言，将在下次启动时生效。本汉化版 Husk 界面固定为简体中文。",
+                   subtitle: "保存安卓应用和游戏的语言偏好。原版部分运行环境尚未接入此选项；Husk 界面固定为简体中文。",
                    rows: Self.languages, selection: $language)
         case .region:
             picker(symbol: "map.fill", title: "地区",

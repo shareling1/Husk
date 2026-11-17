@@ -25,7 +25,8 @@ jobs:
           rustup target add aarch64-apple-ios
           python3 -m venv build-tools
           build-tools/bin/pip install fonttools==4.68.0
-      - uses: actions/cache@v4
+      - uses: actions/cache/restore@v4
+        id: cargo-cache
         with:
           path: |
             ~/.cargo/registry
@@ -38,7 +39,17 @@ jobs:
         run: python3 scripts/prepare_zh_build.py
       - name: Build pairing library from source
         run: bash scripts/build_rppairing_ios.sh
-      - name: Test font path resolver
+      - name: Cache built pairing dependencies
+        if: steps.cargo-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            src/rppairing-ios/target
+          key: rppairing-ios-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('src/rppairing-ios/Cargo.lock') }}
+      - name: Test font path resolver (ARM hosts)
+        if: runner.arch == 'ARM64'
         run: bash tests/translation-layer/run_font_paths.sh
       - name: Validate localization files
         run: find src/app -name '*.strings' -print0 | xargs -0 plutil -lint
