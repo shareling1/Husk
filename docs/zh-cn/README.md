@@ -21,3 +21,12 @@ UIAppFonts 注册字体；CJKFonts 指向包内字体目录，供安卓转译层
 未连接 iPhone 进行安装、布局或游戏运行测试；外部网页、游戏自身界面和底层诊断可能仍为原语言。
 
 构建兼容修复：将个人资料工具栏的可选项条件移至 ToolbarItem 内部，避免 iOS 15.5 目标调用仅 iOS 16 可用的 ToolbarContentBuilder.buildIf；未提高最低系统版本。
+
+## Build 150：Unity 中日韩空白字形兼容修复
+- 将字体文件映射与目录枚举共用同一字体 VFS。`opendir/readdir`、`scandir`、NDK 字体枚举均能发现额外的内置/下载 TTC，而不把包内其他文件暴露为系统字体。
+- 映射 `$ANDROID_ROOT/etc/fonts.xml` 与 `font_fallback.xml`，与 `/system/etc` 一致；Java 使用的其他数据路径保持不变。
+- 系统字体 XML 的 CJK 项改为与固定的静态 Noto TTC 一致：正确地区索引、真实 PostScript 名、移除不存在的变字体轴；缺失的 CJK serif 回退使用同一可用 TTC。
+- 启动日志新增 `fonts: Android discovery entries=... CJK-listed=yes CJK-readable=yes`，便于确认已运行修复版。
+- 新增可在 Intel/ARM macOS 运行的生产字体 VFS 测试，启用 AddressSanitizer/UBSan。原有整体 IO 单测仍只在 ARM 主机执行。
+- 已静态确认一个 Unity 2022.3 ARM64 包中的 Arial/Calibri 缺少 CJK 字形、依赖系统补字；未将 APK 或任何游戏资源上传到仓库。
+- 这些是确认的兼容性缺口；编译/单测通过不等于该游戏已在 iPhone 上实测通过。如仍有空白，需从修复版收集对应启动/字体日志继续排查。

@@ -26,3 +26,7 @@ third_party/gpu/
 # local notes and editor rules, never part of the repo
 /Husk_*.MD
 /.cursor/
+
+# Python source/build verification caches
+__pycache__/
+*.py[cod]

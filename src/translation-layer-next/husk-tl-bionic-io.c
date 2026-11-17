@@ -9,6 +9,7 @@
  */
 #define _DARWIN_C_SOURCE
 #include "husk-tl-bionic.h"
+#include "husk-tl-fonts.h"
 const char *tl_ld_main_apk(void);
 bool tl_ld_aot_contains(const void *addr);
 bool tl_ld_covers(const void *addr, size_t bytes);
@@ -161,42 +162,11 @@ void tl_set_shared_storage(const char *dir) { snprintf(g_shared_storage, sizeof(
 static char g_cacerts[1024];
 void tl_set_cacerts_dir(const char *dir) { snprintf(g_cacerts, sizeof(g_cacerts), "%s", dir ? dir : ""); }
 
-/* The system's fonts (/system/fonts) and their list (/system/etc/fonts.xml, font_fallback.xml), which text engines read to find a
- * typeface (Skia, in Flutter apps): a copy the app carries, laid out as fonts/ and etc/ under one directory. */
-static char g_sysfonts[1024];
-void tl_set_system_fonts_dir(const char *dir) { snprintf(g_sysfonts, sizeof(g_sysfonts), "%s", dir ? dir : ""); }
-/* Fonts the app downloaded later (the Chinese, Japanese and Korean ones the bundle leaves out, #95): a /system/fonts file the bundle
- * does not have is looked for here too, and fonts.xml already names them. */
-static char g_extrafonts[1024];
-void tl_set_extra_fonts_dir(const char *dir) { snprintf(g_extrafonts, sizeof(g_extrafonts), "%s", dir ? dir : ""); }
-
 const char *tl_path_resolve(const char *path, char *buf, size_t n)
 {
     if (!path) return path;
-    if (g_sysfonts[0]) {
-        const char *font_suffix = NULL;
-        if (!strncmp(path, "/system/fonts", 13) && (path[13] == 0 || path[13] == '/'))
-            font_suffix = path + 13;
-        /* Java uses its writable data directory as ANDROID_ROOT. Skia joins that
-         * root with /fonts; route just that subtree through the same system and
-         * downloaded-font lookup, without changing Java's environment or data paths. */
-        const char *root = getenv("ANDROID_ROOT");
-        size_t root_len = root ? strlen(root) : 0;
-        if (!font_suffix && root_len && !strncmp(path, root, root_len) &&
-            !strncmp(path + root_len, "/fonts", 6) &&
-            (path[root_len + 6] == 0 || path[root_len + 6] == '/'))
-            font_suffix = path + root_len + 6;
-        if (font_suffix) {
-            snprintf(buf, n, "%s/fonts%s", g_sysfonts, font_suffix);
-            if (g_extrafonts[0] && font_suffix[0] == '/' && access(buf, F_OK) != 0) {
-                char extra[1100];
-                snprintf(extra, sizeof(extra), "%s%s", g_extrafonts, font_suffix);
-                if (access(extra, F_OK) == 0) snprintf(buf, n, "%s", extra);
-            }
-            return buf;
-        }
-        if (!strcmp(path, "/system/etc/fonts.xml") || !strcmp(path, "/system/etc/font_fallback.xml")) { snprintf(buf, n, "%s/etc%s", g_sysfonts, path + 11); return buf; }
-    }
+    const char *font = tl_fonts_resolve(path, buf, n);
+    if (font) return font;
     if (g_cacerts[0]) {
         static const char *const roots[] = { "/system/etc/security/cacerts", "/apex/com.android.conscrypt/cacerts" };
         for (int i = 0; i < 2; i++) {
@@ -994,7 +964,7 @@ static int b_ioctl(int fd, unsigned long req, long arg)
 /* ------------------------------------------------------------ directories */
 
 typedef struct { uint64_t d_ino; int64_t d_off; uint16_t d_reclen; uint8_t d_type; char d_name[256]; } guest_dirent;
-typedef struct { DIR *dir; guest_dirent ent; char **names; uint8_t *types; size_t n, pos; } guest_dir;
+typedef struct { DIR *dir; tl_font_dir *fonts; guest_dirent ent; char **names; uint8_t *types; size_t n, pos; } guest_dir;
 
 /* A folder inside an APK ("jar:file:///.../base.apk!/assets"), listed from the zip: what is directly in it, files and folders.
  * Unity 6 lists its StreamingAssets this way through System.IO (Wordscapes boots from it). */
@@ -1026,6 +996,15 @@ static guest_dir *jar_opendir(const char *p)
 static void *b_opendir(const char *p)
 {
     if (p && strstr(p, "jar:file:")) { guest_dir *jd = jar_opendir(p); ftrace("opendir", p, jd ? 0 : -1, jd ? 0 : ENOENT); if (!jd) tl_set_guest_errno(2); return jd; }
+    if (tl_fonts_is_directory(p)) {
+        TL_ERRNO_BEGIN(); tl_font_dir *d = tl_fonts_open(); int e = errno; TL_ERRNO_END();
+        ftrace("opendir", p, d ? 0 : -1, e);
+        if (!d) return NULL;
+        guest_dir *g = calloc(1, sizeof(*g));
+        if (!g) { tl_fonts_close(d); tl_set_guest_errno(12); return NULL; }
+        g->fonts = d;
+        return g;
+    }
     char b[1024];
     TL_ERRNO_BEGIN(); DIR *d = opendir(tl_path_resolve(p, b, sizeof(b))); int e = errno; TL_ERRNO_END();
     ftrace("opendir", p, d ? 0 : -1, e);
@@ -1043,48 +1022,55 @@ static void *b_fdopendir(int fd)
     g->dir = d;
     return g;
 }
-static int b_dirfd(void *dp) { guest_dir *g = dp; if (!g->dir) { tl_set_guest_errno(95); return -1; } return dirfd(g->dir); }
-static void b_rewinddir(void *dp) { guest_dir *g = dp; if (g->dir) rewinddir(g->dir); else g->pos = 0; }
+static int b_dirfd(void *dp) { guest_dir *g = dp; if (g->fonts) return tl_fonts_dirfd(g->fonts); if (!g->dir) { tl_set_guest_errno(95); return -1; } return dirfd(g->dir); }
+static void b_rewinddir(void *dp) { guest_dir *g = dp; if (g->fonts) tl_fonts_rewind(g->fonts); else if (g->dir) rewinddir(g->dir); else g->pos = 0; }
 static void *b_readdir(void *dp)
 {
     guest_dir *g = dp;
-    if (!g->dir) {
+    if (!g->dir && !g->fonts) {
         if (g->pos >= g->n) return NULL;
         g->ent.d_ino = g->pos + 1; g->ent.d_off = (int64_t)g->pos + 1; g->ent.d_reclen = sizeof(guest_dirent); g->ent.d_type = g->types[g->pos];
         snprintf(g->ent.d_name, sizeof(g->ent.d_name), "%s", g->names[g->pos]);
         g->pos++;
         return &g->ent;
     }
-    TL_ERRNO_BEGIN(); struct dirent *e = readdir(g->dir); TL_ERRNO_END();
+    TL_ERRNO_BEGIN(); struct dirent *e = g->fonts ? tl_fonts_read(g->fonts) : readdir(g->dir); TL_ERRNO_END();
     if (!e) return NULL;
     g->ent.d_ino = e->d_ino; g->ent.d_off = 0; g->ent.d_reclen = sizeof(guest_dirent); g->ent.d_type = e->d_type;
     snprintf(g->ent.d_name, sizeof(g->ent.d_name), "%s", e->d_name);
     return &g->ent;
 }
-static int b_closedir(void *dp) { guest_dir *g = dp; int r = g->dir ? closedir(g->dir) : 0; for (size_t i = 0; i < g->n; i++) free(g->names[i]); free(g->names); free(g->types); free(g); return r; }
+static int b_closedir(void *dp) { guest_dir *g = dp; int r = g->fonts ? tl_fonts_close(g->fonts) : (g->dir ? closedir(g->dir) : 0); for (size_t i = 0; i < g->n; i++) free(g->names[i]); free(g->names); free(g->types); free(g); return r; }
 
 /* scandir: the entries of a directory, optionally filtered and sorted by functions of the guest's own (the same ISA, so they are called directly). */
 static int b_alphasort(const guest_dirent **a, const guest_dirent **b) { return strcoll((*a)->d_name, (*b)->d_name); }
 static int b_scandir(const char *path, guest_dirent ***list, int (*filter)(const guest_dirent *), int (*cmp)(const guest_dirent **, const guest_dirent **))
 {
-    char b[1024];
-    TL_ERRNO_BEGIN(); DIR *d = opendir(tl_path_resolve(path, b, sizeof(b))); TL_ERRNO_END();
+    guest_dir *d = b_opendir(path);
     if (!d) return -1;
     size_t cap = 16, n = 0;
     guest_dirent **v = malloc(cap * sizeof(*v));
-    struct dirent *e;
-    while ((e = readdir(d))) {
-        guest_dirent *g = calloc(1, sizeof(*g));
-        g->d_ino = e->d_ino; g->d_reclen = sizeof(*g); g->d_type = e->d_type;
-        snprintf(g->d_name, sizeof(g->d_name), "%s", e->d_name);
+    if (!v) { b_closedir(d); tl_set_guest_errno(12); return -1; }
+    guest_dirent *e;
+    while ((e = b_readdir(d))) {
+        guest_dirent *g = malloc(sizeof(*g));
+        if (!g) goto no_memory;
+        *g = *e;
         if (filter && !filter(g)) { free(g); continue; }
-        if (n == cap) { cap *= 2; v = realloc(v, cap * sizeof(*v)); }
+        if (n == cap) {
+            guest_dirent **next = realloc(v, cap * 2 * sizeof(*v));
+            if (!next) { free(g); goto no_memory; }
+            v = next; cap *= 2;
+        }
         v[n++] = g;
     }
-    closedir(d);
+    b_closedir(d);
     if (cmp && n > 1) qsort(v, n, sizeof(*v), (int (*)(const void *, const void *))cmp);
     *list = v;
     return (int)n;
+no_memory:
+    for (size_t i = 0; i < n; i++) free(v[i]);
+    free(v); b_closedir(d); tl_set_guest_errno(12); return -1;
 }
 
 /* ----------------------------------------------------------------- mmap */

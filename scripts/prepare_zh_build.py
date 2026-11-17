@@ -50,6 +50,8 @@ copy(app / "pc-bios", bios)
 (bios / "edk2-aarch64-code.fd.bz2").write_bytes(bz2.compress((app / "edk2-aarch64-code.fd").read_bytes()))
 font = ROOT / "src/app/Husk/Resources/BundledFonts/NotoSansCJK-Regular.ttc"
 fetch("https://raw.githubusercontent.com/notofonts/noto-cjk/165c01b46ea533872e002e0785ff17e44f6d97d8/Sans/OTC/NotoSansCJK-Regular.ttc", font, FONT_SHA)
+from configure_cjk_fonts import configure
+configure(BUILD / "android-system")
 # Keep all original runtime notices alongside the source and OFL notices.
 legal = ROOT / "src/app/Husk/Resources/legal"
 for notice in app.rglob("*"):
@@ -59,6 +61,7 @@ for notice in app.rglob("*"):
     "upstream_source": "29abb512d81bf8cc08babcbe7f7007cb557208ef",
     "runtime_release": "3.4", "runtime_sha256": RELEASE_SHA,
     "font_commit": "165c01b46ea533872e002e0785ff17e44f6d97d8", "font_sha256": FONT_SHA,
-    "strategy": "Recompile modified Swift/C app and Rust pairing code; reuse unchanged official runtime dependencies"
+    "strategy": "Recompile Swift/C app and Rust pairing; reuse official runtime binaries; normalize system CJK XML for pinned static OTC",
+    "font_compatibility_fix": "Merged system/extra font discovery and ANDROID_ROOT font XML mapping"
 }, indent=2) + "\n")
 print("All runtime dependencies and bundled CJK font staged.")

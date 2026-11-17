@@ -21,3 +21,13 @@ manifest = json.loads((R / "docs/zh-cn/translation-manifest.json").read_text(enc
 assert len(manifest) > 1500
 assert all(not (m["file"].endswith("WebApp.swift") and m["en"] in ["App", "Keyboard"]) for m in manifest)
 print("PASS: protocol identifiers, boot markers, offline font wiring, and translation manifest")
+
+io = (R / "src/translation-layer-next/husk-tl-bionic-io.c").read_text()
+assert 'tl_fonts_resolve(path, buf, n)' in io
+assert 'tl_fonts_is_directory(p)' in io
+assert 'tl_fonts_read(g->fonts)' in io
+assert 'guest_dir *d = b_opendir(path)' in io
+ndk = (R / "src/translation-layer-next/husk-tl-bionic-ndk.c").read_text()
+assert 'tl_font_dir *d = tl_fonts_open()' in ndk and 'tl_fonts_read(d)' in ndk
+assert info["CFBundleVersion"] == "150"
+print("PASS: bionic/NDK font discovery wiring and font-fix build identity")

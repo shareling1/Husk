@@ -20,6 +20,7 @@
 #endif
 
 #include "husk-tl-bionic.h"
+#include "husk-tl-fonts.h"
 #include "husk-tl-internal.h"
 #include "husk-tl-jni.h"
 #include "husk-tl-ld.h"
@@ -584,7 +585,26 @@ void tl_set_cacerts_dir(const char *dir);
 void tl_set_system_fonts_dir(const char *dir);
 /* The certificates and fonts Android keeps under /system, as copies the app carries (cacerts/, and fonts/ + etc/fonts.xml). */
 void tl_set_extra_fonts_dir(const char *dir);
-void husk_native_set_extra_fonts(const char *dir) { tl_set_extra_fonts_dir(dir); }
+void husk_native_set_extra_fonts(const char *dir)
+{
+    tl_set_extra_fonts_dir(dir);
+    /* A support log can now distinguish "font included" from "guest can discover it". */
+    size_t count = 0; bool cjk = false;
+    tl_font_dir *fonts = tl_fonts_open();
+    if (fonts) {
+        struct dirent *e;
+        while ((e = tl_fonts_read(fonts))) {
+            if (e->d_name[0] == '.') continue;
+            count++;
+            if (!strcmp(e->d_name, "NotoSansCJK-Regular.ttc")) cjk = true;
+        }
+        tl_fonts_close(fonts);
+    }
+    char path[2048];
+    const char *font = tl_fonts_resolve("/system/fonts/NotoSansCJK-Regular.ttc", path, sizeof(path));
+    tl_log_line("fonts: Android discovery entries=%zu CJK-listed=%s CJK-readable=%s", count,
+                cjk ? "yes" : "no", font && access(font, R_OK) == 0 ? "yes" : "no");
+}
 void husk_native_set_system_files(const char *cacerts_dir, const char *fonts_root)
 {
     if (cacerts_dir) tl_set_cacerts_dir(cacerts_dir);

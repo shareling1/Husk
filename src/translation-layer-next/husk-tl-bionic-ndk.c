@@ -5,6 +5,7 @@
  */
 #define _DARWIN_C_SOURCE
 #include "husk-tl-bionic.h"
+#include "husk-tl-fonts.h"
 
 #include <dirent.h>
 #include <errno.h>
@@ -952,19 +953,17 @@ static tl_afont *afont_new(const char *name)
 }
 static void *b_ASystemFontIterator_open(void)
 {
-    char buf[1100];
-    const char *dir = tl_path_resolve("/system/fonts", buf, sizeof(buf));
-    DIR *d = opendir(dir);
+    tl_font_dir *d = tl_fonts_open();
     if (!d) return NULL;
     tl_afont_iter *it = calloc(1, sizeof(*it));
     struct dirent *e;
     int cap = 0;
-    while (it && (e = readdir(d))) {
+    while (it && (e = tl_fonts_read(d))) {
         if (!font_file(e->d_name)) continue;
         if (it->n == cap) { cap = cap ? cap * 2 : 64; char **nn = realloc(it->names, (size_t)cap * sizeof(char *)); if (!nn) break; it->names = nn; }
         it->names[it->n++] = strdup(e->d_name);
     }
-    closedir(d);
+    tl_fonts_close(d);
     return it;
 }
 static void *b_ASystemFontIterator_next(tl_afont_iter *it) { return it && it->at < it->n ? afont_new(it->names[it->at++]) : NULL; }
